@@ -81,3 +81,10 @@ The main research teams contributing to the current release are:
 
 Copyright 2012-2019, Francisco D. Palacios, Thomas D. Economon, Tim Albring, and the SU2 contributors.
 
+----------------------------------------------------------
+  FEATURE_MAXW
+----------------------------------------------------------
+
+This branch is going to implement a module of calculating electrodynamics phenomenon, which requires the Maxwell equations to run. The code will be based on the heat conductivity module, cause that will save much time for developers, there two modules are very similar.
+
+This part of README can be deleted after the branch is merged into develop branch. Correspondently, one should add the document about how to use this MAXW module. 
