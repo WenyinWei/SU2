@@ -1,5 +1,5 @@
 /*!
- * \file CHeatFVMVariable.hpp
+ * \file CMaxwellVariable.hpp
  * \brief Class for defining the variables of the finite-volume heat equation solver.
  * \author F. Palacios, T. Economon
  * \version 6.2.0 "Falcon"
@@ -40,12 +40,12 @@
 #include "CVariable.hpp"
 
 /*!
- * \class CHeatFVMVariable
- * \brief Class for defining the variables of the finite-volume heat equation solver.
- * \author O. Burghardt
+ * \class CMaxwellVariable
+ * \brief Class for defining the variables of the finite-volume Maxwell equations solver.
+ * \author Wenyin Wei
  * \version 6.2.0 "Falcon"
  */
-class CHeatFVMVariable : public CVariable {
+class CMaxwellVariable : public CVariable {
 protected:
   su2double* Solution_Direct;  /*!< \brief Direct solution container for use in the adjoint Heat solver. */
   su2double* Solution_BGS_k;   /*!< \brief Old solution container for BGS iterations ---*/
@@ -55,7 +55,7 @@ public:
   /*!
    * \brief Constructor of the class.
    */
-  CHeatFVMVariable(void);
+  CMaxwellVariable(void);
 
   /*!
    * \overload
@@ -64,11 +64,11 @@ public:
    * \param[in] val_nvar - Number of variables of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  CHeatFVMVariable(su2double val_Heat, unsigned short val_nDim, unsigned short val_nvar, CConfig *config);
+  CMaxwellVariable(su2double val_Heat, unsigned short val_nDim, unsigned short val_nvar, CConfig *config);
 
   /*!
    * \brief Destructor of the class.
    */
-  ~CHeatFVMVariable(void);
+  ~CMaxwellVariable(void);
 
 };

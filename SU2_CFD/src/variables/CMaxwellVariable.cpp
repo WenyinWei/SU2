@@ -1,5 +1,5 @@
 /*!
- * \file CHeatFVMVariable.cpp
+ * \file CMaxwellVariable.cpp
  * \brief Definition of the solution fields.
  * \author F. Palacios, T. Economon
  * \version 6.2.0 "Falcon"
@@ -35,9 +35,9 @@
  * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../../include/variables/CHeatFVMVariable.hpp"
+#include "../../include/variables/CMaxwellVariable.hpp"
 
-CHeatFVMVariable::CHeatFVMVariable(void) : CVariable() {
+CMaxwellVariable::CMaxwellVariable(void) : CVariable() {
 
   /*--- Array initialization ---*/
   Solution_Direct = NULL;
@@ -45,7 +45,7 @@ CHeatFVMVariable::CHeatFVMVariable(void) : CVariable() {
 
 }
 
-CHeatFVMVariable::CHeatFVMVariable(su2double val_Heat, unsigned short val_nDim, unsigned short val_nvar,
+CMaxwellVariable::CMaxwellVariable(su2double val_Heat, unsigned short val_nDim, unsigned short val_nvar,
                                    CConfig *config) : CVariable(val_nDim, val_nvar, config) {
 
   unsigned short iVar, iMesh, nMGSmooth = 0;
@@ -96,7 +96,7 @@ CHeatFVMVariable::CHeatFVMVariable(su2double val_Heat, unsigned short val_nDim, 
 
 }
 
-CHeatFVMVariable::~CHeatFVMVariable(void) {
+CMaxwellVariable::~CMaxwellVariable(void) {
   if (Solution_BGS_k  != NULL) delete [] Solution_BGS_k;
   if (Solution_Direct != NULL) delete [] Solution_Direct;
 }

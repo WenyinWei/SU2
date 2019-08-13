@@ -213,6 +213,7 @@ enum ENUM_SOLVER {
   FEM_NAVIER_STOKES = 51,               /*!< \brief Definition of the finite element Navier-Stokes' solver. */
   FEM_RANS = 52,                        /*!< \brief Definition of the finite element Reynolds-averaged Navier-Stokes' (RANS) solver. */
   FEM_LES = 53,                         /*!< \brief Definition of the finite element Large Eddy Simulation Navier-Stokes' (LES) solver. */
+  MAXWELL_EQUATION = 70,                /*!< \brief Definition of the finite volume maxwell equations solver. */
   MULTIPHYSICS = 99
 };
 /* BEGIN_CONFIG_ENUMS */

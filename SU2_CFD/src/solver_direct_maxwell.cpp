@@ -1,6 +1,6 @@
 /*!
- * \file solution_direct_heat.cpp
- * \brief Main subrotuines for solving the heat equation
+ * \file solution_direct_maxwell.cpp
+ * \brief Main subrotuines for solving the maxwell equations
  * \author F. Palacios, T. Economon
  * \version 6.2.0 "Falcon"
  *
@@ -36,14 +36,14 @@
  */
 
 #include "../include/solver_structure.hpp"
-#include "../include/variables/CHeatFVMVariable.hpp"
+#include "../include/variables/CMaxwellVariable.hpp"
 
-CHeatSolverFVM::CHeatSolverFVM(void) : CSolver() {
+CMaxwellSolver::CMaxwellSolver(void) : CSolver() {
 
   ConjugateVar = NULL;
 }
 
-CHeatSolverFVM::CHeatSolverFVM(CGeometry *geometry, CConfig *config, unsigned short iMesh) : CSolver() {
+CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned short iMesh) : CSolver() {
 
   unsigned short iVar, iDim, nLineLets, iMarker;
   unsigned long iPoint, iVertex;
@@ -56,8 +56,7 @@ CHeatSolverFVM::CHeatSolverFVM(CGeometry *geometry, CConfig *config, unsigned sh
                || (config->GetKind_Solver() == RANS)
                || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
                || (config->GetKind_Solver() == DISC_ADJ_RANS));
-  bool heat_equation = ((config->GetKind_Solver() == HEAT_EQUATION_FVM) ||
-                        (config->GetKind_Solver() == DISC_ADJ_HEAT));
+  bool maxwell_equation = (config->GetKind_Solver() == MAXWELL_EQUATION);
 
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -65,7 +64,7 @@ CHeatSolverFVM::CHeatSolverFVM(CGeometry *geometry, CConfig *config, unsigned sh
 
   /*--- Dimension of the problem --> temperature is the only conservative variable ---*/
 
-  nVar = 1;
+  nVar = 6;
   nPoint = geometry->GetnPoint();
   nPointDomain = geometry->GetnPointDomain();
 
@@ -211,13 +210,13 @@ CHeatSolverFVM::CHeatSolverFVM(CGeometry *geometry, CConfig *config, unsigned sh
       ConjugateVar[iMarker][iVertex][0] = config->GetTemperature_FreeStreamND();
     }
   }
-
-  /*--- If the heat solver runs stand-alone, we have to set the reference values ---*/
-  if(heat_equation) {
-    su2double rho_cp = config->GetDensity_Solid()*config->GetSpecific_Heat_Cp_Solid();
-    su2double thermal_diffusivity_solid = config->GetThermalConductivity_Solid() / rho_cp;
-    config->SetThermalDiffusivity_Solid(thermal_diffusivity_solid);
-  }
+  // The following code is for heat solver, you probably will not need a reference value for maxwell equation
+  // /*--- If the heat solver runs stand-alone, we have to set the reference values ---*/
+  // if(heat_equation) {
+  //   su2double rho_cp = config->GetDensity_Solid()*config->GetSpecific_Heat_Cp_Solid();
+  //   su2double thermal_diffusivity_solid = config->GetThermalConductivity_Solid() / rho_cp;
+  //   config->SetThermalDiffusivity_Solid(thermal_diffusivity_solid);
+  // }
 
   if (multizone){
     /*--- Initialize the BGS residuals. ---*/
@@ -247,10 +246,10 @@ CHeatSolverFVM::CHeatSolverFVM(CGeometry *geometry, CConfig *config, unsigned sh
   
 }
 
-CHeatSolverFVM::~CHeatSolverFVM(void) { }
+CMaxwellSolver::~CMaxwellSolver(void) { }
 
 
-void CHeatSolverFVM::Preprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iMesh, unsigned short iRKStep, unsigned short RunTime_EqSystem, bool Output) {
+void CMaxwellSolver::Preprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iMesh, unsigned short iRKStep, unsigned short RunTime_EqSystem, bool Output) {
 
   unsigned long iPoint;
   bool center = (config->GetKind_ConvNumScheme_Heat() == SPACE_CENTERED);
@@ -272,9 +271,9 @@ void CHeatSolverFVM::Preprocessing(CGeometry *geometry, CSolver **solver_contain
   if (config->GetKind_Gradient_Method() == WEIGHTED_LEAST_SQUARES) SetSolution_Gradient_LS(geometry, config);
 }
 
-void CHeatSolverFVM::Postprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iMesh) { }
+void CMaxwellSolver::Postprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iMesh) { }
 
-void CHeatSolverFVM::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig *config, int val_iter, bool val_update_geo) {
+void CMaxwellSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig *config, int val_iter, bool val_update_geo) {
 
   /*--- Restart the solution from file information ---*/
   unsigned short iDim, iVar, iMesh;
@@ -403,10 +402,10 @@ void CHeatSolverFVM::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfi
    on the fine level in order to have all necessary quantities updated,
    especially if this is a turbulent simulation (eddy viscosity). ---*/
   
-  solver[MESH_0][HEAT_SOL]->InitiateComms(geometry[MESH_0], config, SOLUTION);
-  solver[MESH_0][HEAT_SOL]->CompleteComms(geometry[MESH_0], config, SOLUTION);
+  solver[MESH_0][MAXW_SOL]->InitiateComms(geometry[MESH_0], config, SOLUTION);
+  solver[MESH_0][MAXW_SOL]->CompleteComms(geometry[MESH_0], config, SOLUTION);
   
-  solver[MESH_0][HEAT_SOL]->Preprocessing(geometry[MESH_0], solver[MESH_0], config, MESH_0, NO_RK_ITER, RUNTIME_HEAT_SYS, false);
+  solver[MESH_0][MAXW_SOL]->Preprocessing(geometry[MESH_0], solver[MESH_0], config, MESH_0, NO_RK_ITER, RUNTIME_HEAT_SYS, false);
 
   /*--- Interpolate the solution down to the coarse multigrid levels ---*/
 
@@ -417,16 +416,16 @@ void CHeatSolverFVM::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfi
       for (iChildren = 0; iChildren < geometry[iMesh]->node[iPoint]->GetnChildren_CV(); iChildren++) {
         Point_Fine = geometry[iMesh]->node[iPoint]->GetChildren_CV(iChildren);
         Area_Children = geometry[iMesh-1]->node[Point_Fine]->GetVolume();
-        Solution_Fine = solver[iMesh-1][HEAT_SOL]->node[Point_Fine]->GetSolution();
+        Solution_Fine = solver[iMesh-1][MAXW_SOL]->node[Point_Fine]->GetSolution();
         for (iVar = 0; iVar < nVar; iVar++) {
           Solution[iVar] += Solution_Fine[iVar]*Area_Children/Area_Parent;
         }
       }
-      solver[iMesh][HEAT_SOL]->node[iPoint]->SetSolution(Solution);
+      solver[iMesh][MAXW_SOL]->node[iPoint]->SetSolution(Solution);
     }
-    solver[iMesh][HEAT_SOL]->InitiateComms(geometry[iMesh], config, SOLUTION);
-    solver[iMesh][HEAT_SOL]->CompleteComms(geometry[iMesh], config, SOLUTION);
-    solver[iMesh][HEAT_SOL]->Preprocessing(geometry[iMesh], solver[iMesh], config, iMesh, NO_RK_ITER, RUNTIME_HEAT_SYS, false);
+    solver[iMesh][MAXW_SOL]->InitiateComms(geometry[iMesh], config, SOLUTION);
+    solver[iMesh][MAXW_SOL]->CompleteComms(geometry[iMesh], config, SOLUTION);
+    solver[iMesh][MAXW_SOL]->Preprocessing(geometry[iMesh], solver[iMesh], config, iMesh, NO_RK_ITER, RUNTIME_HEAT_SYS, false);
   }
 
   delete [] Coord;
@@ -440,7 +439,7 @@ void CHeatSolverFVM::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfi
 }
 
 
-void CHeatSolverFVM::SetUndivided_Laplacian(CGeometry *geometry, CConfig *config) {
+void CMaxwellSolver::SetUndivided_Laplacian(CGeometry *geometry, CConfig *config) {
 
   unsigned long iPoint, jPoint, iEdge;
   su2double *Diff;
@@ -493,7 +492,7 @@ void CHeatSolverFVM::SetUndivided_Laplacian(CGeometry *geometry, CConfig *config
 
 }
 
-void CHeatSolverFVM::Centered_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics,
+void CMaxwellSolver::Centered_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics,
                        CConfig *config, unsigned short iMesh, unsigned short iRKStep) {
 
   su2double *V_i, *V_j, Temp_i, Temp_j;
@@ -542,7 +541,7 @@ void CHeatSolverFVM::Centered_Residual(CGeometry *geometry, CSolver **solver_con
   }
 }
 
-void CHeatSolverFVM::Upwind_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short iMesh) {
+void CMaxwellSolver::Upwind_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short iMesh) {
 
   su2double *V_i, *V_j, Temp_i, Temp_i_Corrected, Temp_j, Temp_j_Corrected, **Gradient_i, **Gradient_j, Project_Grad_i, Project_Grad_j,
           **Temp_i_Grad, **Temp_j_Grad, Project_Temp_i_Grad, Project_Temp_j_Grad, Non_Physical = 1.0;
@@ -639,7 +638,7 @@ void CHeatSolverFVM::Upwind_Residual(CGeometry *geometry, CSolver **solver_conta
 
 }
 
-void CHeatSolverFVM::Viscous_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short iMesh, unsigned short iRKStep) {
+void CMaxwellSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short iMesh, unsigned short iRKStep) {
 
   su2double laminar_viscosity, Prandtl_Lam, Prandtl_Turb, eddy_viscosity_i, eddy_viscosity_j,
       thermal_diffusivity_i, thermal_diffusivity_j, Temp_i, Temp_j, **Temp_i_Grad, **Temp_j_Grad;
@@ -710,9 +709,9 @@ void CHeatSolverFVM::Viscous_Residual(CGeometry *geometry, CSolver **solver_cont
   }
 }
 
-void CHeatSolverFVM::Source_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CNumerics *second_numerics, CConfig *config, unsigned short iMesh) { }
+void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CNumerics *second_numerics, CConfig *config, unsigned short iMesh) { }
 
-void CHeatSolverFVM::Set_Heatflux_Areas(CGeometry *geometry, CConfig *config) {
+void CMaxwellSolver::Set_Heatflux_Areas(CGeometry *geometry, CConfig *config) {
 
   unsigned short iMarker, iMarker_HeatFlux, Monitoring, iDim;
   unsigned long iPoint, iVertex;
@@ -778,7 +777,7 @@ void CHeatSolverFVM::Set_Heatflux_Areas(CGeometry *geometry, CConfig *config) {
   delete[] Local_Surface_Areas;
 }
 
-void CHeatSolverFVM::BC_Isothermal_Wall(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config,
+void CMaxwellSolver::BC_Isothermal_Wall(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config,
                                        unsigned short val_marker) {
 
   unsigned long iPoint, iVertex, Point_Normal;
@@ -843,7 +842,7 @@ void CHeatSolverFVM::BC_Isothermal_Wall(CGeometry *geometry, CSolver **solver_co
   }
 }
 
-void CHeatSolverFVM::BC_HeatFlux_Wall(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config,
+void CMaxwellSolver::BC_HeatFlux_Wall(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config,
                                                      unsigned short val_marker) {
 
   unsigned short iDim;
@@ -907,7 +906,7 @@ void CHeatSolverFVM::BC_HeatFlux_Wall(CGeometry *geometry, CSolver **solver_cont
   }
 }
 
-void CHeatSolverFVM::BC_Inlet(CGeometry *geometry, CSolver **solver_container,
+void CMaxwellSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container,
                             CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
 
   unsigned short iDim;
@@ -1027,7 +1026,7 @@ void CHeatSolverFVM::BC_Inlet(CGeometry *geometry, CSolver **solver_container,
 
 }
 
-void CHeatSolverFVM::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
+void CMaxwellSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
                              CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
 
   unsigned short iDim;
@@ -1097,7 +1096,7 @@ void CHeatSolverFVM::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
 
 }
 
-void CHeatSolverFVM::BC_ConjugateHeat_Interface(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short val_marker) {
+void CMaxwellSolver::BC_ConjugateHeat_Interface(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short val_marker) {
 
   unsigned long iVertex, iPoint, total_index;
   unsigned short iDim, iVar, iMarker;
@@ -1188,7 +1187,7 @@ void CHeatSolverFVM::BC_ConjugateHeat_Interface(CGeometry *geometry, CSolver **s
   }
 }
 
-void CHeatSolverFVM::Heat_Fluxes(CGeometry *geometry, CSolver **solver_container, CConfig *config) {
+void CMaxwellSolver::Heat_Fluxes(CGeometry *geometry, CSolver **solver_container, CConfig *config) {
 
   unsigned long iVertex, iPoint, iPointNormal;
   unsigned short Boundary, Monitoring, iMarker, iDim;
@@ -1329,7 +1328,7 @@ void CHeatSolverFVM::Heat_Fluxes(CGeometry *geometry, CSolver **solver_container
   Total_HeatFlux = AllBound_HeatFlux;
 }
 
-void CHeatSolverFVM::SetTime_Step(CGeometry *geometry, CSolver **solver_container, CConfig *config,
+void CMaxwellSolver::SetTime_Step(CGeometry *geometry, CSolver **solver_container, CConfig *config,
                                unsigned short iMesh, unsigned long Iteration) {
 
   unsigned short iDim, iMarker;
@@ -1547,7 +1546,8 @@ void CHeatSolverFVM::SetTime_Step(CGeometry *geometry, CSolver **solver_containe
   }
 }
 
-void CHeatSolverFVM::ExplicitEuler_Iteration(CGeometry *geometry, CSolver **solver_container, CConfig *config) {
+// No necessity to change this function
+void CMaxwellSolver::ExplicitEuler_Iteration(CGeometry *geometry, CSolver **solver_container, CConfig *config) {
 
   su2double *local_Residual, *local_Res_TruncError, Vol, Delta, Res;
   unsigned short iVar;
@@ -1592,7 +1592,7 @@ void CHeatSolverFVM::ExplicitEuler_Iteration(CGeometry *geometry, CSolver **solv
 }
 
 
-void CHeatSolverFVM::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solver_container, CConfig *config) {
+void CMaxwellSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solver_container, CConfig *config) {
 
   unsigned short iVar;
   unsigned long iPoint, total_index;
@@ -1686,7 +1686,8 @@ void CHeatSolverFVM::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solv
 
 }
 
-void CHeatSolverFVM::SetInitialCondition(CGeometry **geometry, CSolver ***solver_container, CConfig *config, unsigned long ExtIter) {
+//No need to change this function
+void CMaxwellSolver::SetInitialCondition(CGeometry **geometry, CSolver ***solver_container, CConfig *config, unsigned long ExtIter) {
 
   unsigned long iPoint, Point_Fine;
   unsigned short iMesh, iChildren, iVar;
@@ -1709,15 +1710,15 @@ void CHeatSolverFVM::SetInitialCondition(CGeometry **geometry, CSolver ***solver
         for (iChildren = 0; iChildren < geometry[iMesh]->node[iPoint]->GetnChildren_CV(); iChildren++) {
           Point_Fine = geometry[iMesh]->node[iPoint]->GetChildren_CV(iChildren);
           Area_Children = geometry[iMesh-1]->node[Point_Fine]->GetVolume();
-          Solution_Fine = solver_container[iMesh-1][HEAT_SOL]->node[Point_Fine]->GetSolution();
+          Solution_Fine = solver_container[iMesh-1][MAXW_SOL]->node[Point_Fine]->GetSolution();
           for (iVar = 0; iVar < nVar; iVar++) {
             Solution[iVar] += Solution_Fine[iVar]*Area_Children/Area_Parent;
           }
         }
-        solver_container[iMesh][HEAT_SOL]->node[iPoint]->SetSolution(Solution);
+        solver_container[iMesh][MAXW_SOL]->node[iPoint]->SetSolution(Solution);
       }      
-      solver_container[iMesh][HEAT_SOL]->InitiateComms(geometry[iMesh], config, SOLUTION);
-      solver_container[iMesh][HEAT_SOL]->CompleteComms(geometry[iMesh], config, SOLUTION);
+      solver_container[iMesh][MAXW_SOL]->InitiateComms(geometry[iMesh], config, SOLUTION);
+      solver_container[iMesh][MAXW_SOL]->CompleteComms(geometry[iMesh], config, SOLUTION);
     }
     delete [] Solution;
   }
@@ -1731,8 +1732,8 @@ void CHeatSolverFVM::SetInitialCondition(CGeometry **geometry, CSolver ***solver
 
     for (iMesh = 0; iMesh <= config->GetnMGLevels(); iMesh++) {
       for (iPoint = 0; iPoint < geometry[iMesh]->GetnPoint(); iPoint++) {
-        solver_container[iMesh][HEAT_SOL]->node[iPoint]->Set_Solution_time_n();
-        solver_container[iMesh][HEAT_SOL]->node[iPoint]->Set_Solution_time_n1();
+        solver_container[iMesh][MAXW_SOL]->node[iPoint]->Set_Solution_time_n();
+        solver_container[iMesh][MAXW_SOL]->node[iPoint]->Set_Solution_time_n1();
       }
     }
 
@@ -1741,20 +1742,20 @@ void CHeatSolverFVM::SetInitialCondition(CGeometry **geometry, CSolver ***solver
 
       /*--- Load an additional restart file for a 2nd-order restart ---*/
 
-      solver_container[MESH_0][HEAT_SOL]->LoadRestart(geometry, solver_container, config, SU2_TYPE::Int(config->GetUnst_RestartIter()-1), true);
+      solver_container[MESH_0][MAXW_SOL]->LoadRestart(geometry, solver_container, config, SU2_TYPE::Int(config->GetUnst_RestartIter()-1), true);
 
       /*--- Push back this new solution to time level N. ---*/
 
       for (iMesh = 0; iMesh <= config->GetnMGLevels(); iMesh++) {
         for (iPoint = 0; iPoint < geometry[iMesh]->GetnPoint(); iPoint++) {
-          solver_container[iMesh][HEAT_SOL]->node[iPoint]->Set_Solution_time_n();
+          solver_container[iMesh][MAXW_SOL]->node[iPoint]->Set_Solution_time_n();
         }
       }
     }
   }
 }
 
-void CHeatSolverFVM::SetResidual_DualTime(CGeometry *geometry, CSolver **solver_container, CConfig *config,
+void CMaxwellSolver::SetResidual_DualTime(CGeometry *geometry, CSolver **solver_container, CConfig *config,
                                         unsigned short iRKStep, unsigned short iMesh, unsigned short RunTime_EqSystem) {
 
   /*--- Local variables ---*/
@@ -1823,7 +1824,8 @@ void CHeatSolverFVM::SetResidual_DualTime(CGeometry *geometry, CSolver **solver_
   }
 }
 
-void CHeatSolverFVM::ComputeResidual_Multizone(CGeometry *geometry, CConfig *config){
+// No need to change this function
+void CMaxwellSolver::ComputeResidual_Multizone(CGeometry *geometry, CConfig *config){
 
   unsigned short iVar;
   unsigned long iPoint;
