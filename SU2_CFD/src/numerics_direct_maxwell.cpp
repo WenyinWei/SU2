@@ -1,5 +1,5 @@
 /*!
- * \file numerics_direct_heat.cpp
+ * \file numerics_direct_maxwell.cpp
  * \brief This file contains all the convective term discretization.
  * \author F. Palacios, T. Economon
  * \version 6.2.0 "Falcon"
@@ -38,7 +38,7 @@
 #include "../include/numerics_structure.hpp"
 #include <limits>
 
-CUpwSca_Heat::CUpwSca_Heat(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
+CUpwSca_Maxwell::CUpwSca_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
   implicit        = (config->GetKind_TimeIntScheme_Turb() == EULER_IMPLICIT);
   grid_movement   = config->GetGrid_Movement();
@@ -50,14 +50,14 @@ CUpwSca_Heat::CUpwSca_Heat(unsigned short val_nDim, unsigned short val_nVar, CCo
   Laminar_Viscosity_j = config->GetViscosity_FreeStreamND();
 }
 
-CUpwSca_Heat::~CUpwSca_Heat(void) {
+CUpwSca_Maxwell::~CUpwSca_Maxwell(void) {
 
   delete [] Velocity_i;
   delete [] Velocity_j;
 
 }
 
-void CUpwSca_Heat::ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config) {
+void CUpwSca_Maxwell::ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config) {
 
   q_ij = 0.0;
 
@@ -89,28 +89,28 @@ void CUpwSca_Heat::ComputeResidual(su2double *val_residual, su2double **val_Jaco
 
 }
 
-CCentSca_Heat::CCentSca_Heat(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
+CCentSca_Maxwell::CCentSca_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
   implicit        = (config->GetKind_TimeIntScheme_Turb() == EULER_IMPLICIT);
   grid_movement   = config->GetGrid_Movement();
 
   MeanVelocity = new su2double [nDim];
 
-  Laminar_Viscosity_i = config->GetViscosity_FreeStreamND();
-  Laminar_Viscosity_j = config->GetViscosity_FreeStreamND();
+  Laminar_Viscosity_i = config->GetViscosity_FreeStreamND(); //TODO, Heat module characters
+  Laminar_Viscosity_j = config->GetViscosity_FreeStreamND(); //TODO, Heat module characters
 
-  Param_Kappa_4 = config->GetKappa_4th_Heat();
+  Param_Kappa_4 = config->GetKappa_4th_Heat(); //TODO, Heat module characters
   Diff_Lapl = new su2double [nVar];
 }
 
-CCentSca_Heat::~CCentSca_Heat(void) {
+CCentSca_Maxwell::~CCentSca_Maxwell(void) {
 
   delete [] MeanVelocity;
   delete [] Diff_Lapl;
 
 }
 
-void CCentSca_Heat::ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config) {
+void CCentSca_Maxwell::ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config) {
 
   AD::StartPreacc();
   AD::SetPreaccIn(V_i, nDim+3); AD::SetPreaccIn(V_j, nDim+3);
@@ -174,31 +174,31 @@ void CCentSca_Heat::ComputeResidual(su2double *val_residual, su2double **val_Jac
 
 }
 
-CAvgGrad_Heat::CAvgGrad_Heat(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
+CAvgGrad_Maxwell::CAvgGrad_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
-  implicit        = (config->GetKind_TimeIntScheme_Heat() == EULER_IMPLICIT);
+  implicit        = (config->GetKind_TimeIntScheme_Heat() == EULER_IMPLICIT); //TODO, Heat module characters
 
   Edge_Vector = new su2double [nDim];
-  Proj_Mean_GradHeatVar_Normal = new su2double [nVar];
-  Proj_Mean_GradHeatVar_Corrected = new su2double [nVar];
-  Mean_GradHeatVar = new su2double* [nVar];
+  Proj_Mean_GradHeatVar_Normal = new su2double [nVar]; //TODO, Heat module characters
+  Proj_Mean_GradHeatVar_Corrected = new su2double [nVar]; //TODO, Heat module characters
+  Mean_GradHeatVar = new su2double* [nVar]; //TODO, Heat module characters
   for (iVar = 0; iVar < nVar; iVar++)
-    Mean_GradHeatVar[iVar] = new su2double [nDim];
+    Mean_GradHeatVar[iVar] = new su2double [nDim]; //TODO, Heat module characters
 
 }
 
-CAvgGrad_Heat::~CAvgGrad_Heat(void) {
+CAvgGrad_Maxwell::~CAvgGrad_Maxwell(void) {
 
   delete [] Edge_Vector;
-  delete [] Proj_Mean_GradHeatVar_Normal;
-  delete [] Proj_Mean_GradHeatVar_Corrected;
+  delete [] Proj_Mean_GradHeatVar_Normal; //TODO, Heat module characters
+  delete [] Proj_Mean_GradHeatVar_Corrected; //TODO, Heat module characters
   for (iVar = 0; iVar < nVar; iVar++)
-    delete [] Mean_GradHeatVar[iVar];
-  delete [] Mean_GradHeatVar;
+    delete [] Mean_GradHeatVar[iVar]; //TODO, Heat module characters
+  delete [] Mean_GradHeatVar; //TODO, Heat module characters
 
 }
 
-void CAvgGrad_Heat::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
+void CAvgGrad_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
 
   AD::StartPreacc();
   AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
@@ -222,16 +222,16 @@ void CAvgGrad_Heat::ComputeResidual(su2double *val_residual, su2double **Jacobia
 
   /*--- Mean gradient approximation. Projection of the mean gradient in the direction of the edge ---*/
   for (iVar = 0; iVar < nVar; iVar++) {
-    Proj_Mean_GradHeatVar_Normal[iVar] = 0.0;
-    Proj_Mean_GradHeatVar_Corrected[iVar] = 0.0;
+    Proj_Mean_GradHeatVar_Normal[iVar] = 0.0; //TODO, Heat module characters
+    Proj_Mean_GradHeatVar_Corrected[iVar] = 0.0; //TODO, Heat module characters
     for (iDim = 0; iDim < nDim; iDim++) {
-      Mean_GradHeatVar[iVar][iDim] = 0.5*(ConsVar_Grad_i[iVar][iDim] + ConsVar_Grad_j[iVar][iDim]);
-      Proj_Mean_GradHeatVar_Normal[iVar] += Mean_GradHeatVar[iVar][iDim]*Normal[iDim];
+      Mean_GradHeatVar[iVar][iDim] = 0.5*(ConsVar_Grad_i[iVar][iDim] + ConsVar_Grad_j[iVar][iDim]); //TODO, Heat module characters
+      Proj_Mean_GradHeatVar_Normal[iVar] += Mean_GradHeatVar[iVar][iDim]*Normal[iDim]; //TODO, Heat module characters
     }
-    Proj_Mean_GradHeatVar_Corrected[iVar] = Proj_Mean_GradHeatVar_Normal[iVar];
+    Proj_Mean_GradHeatVar_Corrected[iVar] = Proj_Mean_GradHeatVar_Normal[iVar]; //TODO, Heat module characters
   }
 
-  val_residual[0] = Thermal_Diffusivity_Mean*Proj_Mean_GradHeatVar_Corrected[0];
+  val_residual[0] = Thermal_Diffusivity_Mean*Proj_Mean_GradHeatVar_Corrected[0]; //TODO, Heat module characters
 
   /*--- For Jacobians -> Use of TSL approx. to compute derivatives of the gradients ---*/
   if (implicit) {
@@ -245,11 +245,11 @@ void CAvgGrad_Heat::ComputeResidual(su2double *val_residual, su2double **Jacobia
 }
 
 
-CAvgGradCorrected_Heat::CAvgGradCorrected_Heat(unsigned short val_nDim, unsigned short val_nVar,
+CAvgGradCorrected_Maxwell::CAvgGradCorrected_Maxwell(unsigned short val_nDim, unsigned short val_nVar,
                                                    CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
-  implicit        = (config->GetKind_TimeIntScheme_Heat() == EULER_IMPLICIT);
-
+  implicit        = (config->GetKind_TimeIntScheme_Heat() == EULER_IMPLICIT); //TODO, Heat module characters
+  // TODO, Heat module characters, many heat variables
   Edge_Vector = new su2double [nDim];
   Proj_Mean_GradHeatVar_Edge = new su2double [nVar];
   Proj_Mean_GradHeatVar_Kappa = new su2double [nVar];
@@ -260,7 +260,7 @@ CAvgGradCorrected_Heat::CAvgGradCorrected_Heat(unsigned short val_nDim, unsigned
 
 }
 
-CAvgGradCorrected_Heat::~CAvgGradCorrected_Heat(void) {
+CAvgGradCorrected_Maxwell::~CAvgGradCorrected_Maxwell(void) {
 
   delete [] Edge_Vector;
   delete [] Proj_Mean_GradHeatVar_Edge;
@@ -272,7 +272,7 @@ CAvgGradCorrected_Heat::~CAvgGradCorrected_Heat(void) {
 
 }
 
-void CAvgGradCorrected_Heat::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
+void CAvgGradCorrected_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
 
   AD::StartPreacc();
   AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
@@ -296,7 +296,7 @@ void CAvgGradCorrected_Heat::ComputeResidual(su2double *val_residual, su2double 
 
   /*--- Mean gradient approximation. Projection of the mean gradient
    in the direction of the edge ---*/
-
+  // TODO, Heat module characters
   for (iVar = 0; iVar < nVar; iVar++) {
     Proj_Mean_GradHeatVar_Edge[iVar] = 0.0;
     Proj_Mean_GradHeatVar_Kappa[iVar] = 0.0;
