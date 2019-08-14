@@ -190,7 +190,7 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
   }
 
   su2double Temperature_Solid_Freestream_ND = config->GetTemperature_Freestream_Solid()/config->GetTemperature_Ref();
-  if (heat_equation && (rank == MASTER_NODE)) {
+  if (maxwell_equation && (rank == MASTER_NODE)) {
     cout << "Heat solver freestream temperature in case for solids: " << Temperature_Solid_Freestream_ND << endl;
   }
 
@@ -235,9 +235,9 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
 
     for (iPoint = 0; iPoint < nPoint; iPoint++)
       if (flow)
-        node[iPoint] = new CHeatFVMVariable(config->GetTemperature_FreeStreamND(), nDim, nVar, config);
+        node[iPoint] = new CMaxwellVariable(config->GetTemperature_FreeStreamND(), nDim, nVar, config);
       else
-        node[iPoint] = new CHeatFVMVariable(Temperature_Solid_Freestream_ND, nDim, nVar, config);
+        node[iPoint] = new CMaxwellVariable(Temperature_Solid_Freestream_ND, nDim, nVar, config);
 
   /*--- MPI solution ---*/
   
@@ -282,8 +282,7 @@ void CMaxwellSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfi
                || (config->GetKind_Solver() == RANS)
                || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
                || (config->GetKind_Solver() == DISC_ADJ_RANS));
-  bool heat_equation = ((config->GetKind_Solver() == HEAT_EQUATION_FVM) ||
-                        (config->GetKind_Solver() == DISC_ADJ_HEAT));
+  bool maxwell_equation = (config->GetKind_Solver() == MAXWELL_EQUATION);
 
   su2double Area_Children, Area_Parent, *Coord, *Solution_Fine;
   bool dual_time = ((config->GetUnsteady_Simulation() == DT_STEPPING_1ST) ||

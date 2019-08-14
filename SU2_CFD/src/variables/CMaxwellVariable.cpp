@@ -1,7 +1,7 @@
 /*!
  * \file CMaxwellVariable.cpp
  * \brief Definition of the solution fields.
- * \author F. Palacios, T. Economon
+ * \author Wenyin Wei
  * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
@@ -45,7 +45,7 @@ CMaxwellVariable::CMaxwellVariable(void) : CVariable() {
 
 }
 
-CMaxwellVariable::CMaxwellVariable(su2double val_Heat, unsigned short val_nDim, unsigned short val_nvar,
+CMaxwellVariable::CMaxwellVariable(su2double *val_EM, unsigned short val_nDim, unsigned short val_nvar,
                                    CConfig *config) : CVariable(val_nDim, val_nvar, config) {
 
   unsigned short iVar, iMesh, nMGSmooth = 0;
@@ -58,8 +58,11 @@ CMaxwellVariable::CMaxwellVariable(su2double val_Heat, unsigned short val_nDim, 
   Solution_Direct = NULL;
   Solution_BGS_k  = NULL;
 
-  /*--- Initialization of heat variable ---*/
-  Solution[0] = val_Heat;		Solution_Old[0] = val_Heat;
+  /*--- Initialization of electromagnetic field variable ---*/
+  for (iVar = 0; iVar < nVar; iVar++) {
+    Solution    [iVar] = val_EM[iVar];
+    Solution_Old[iVar] = val_EM[iVar];
+  }
 
   /*--- Allocate residual structures ---*/
 
@@ -81,8 +84,11 @@ CMaxwellVariable::CMaxwellVariable(su2double val_Heat, unsigned short val_nDim, 
 
   /*--- Allocate and initialize solution for dual time strategy ---*/
   if (dual_time) {
-    Solution_time_n[0]  = val_Heat;
-    Solution_time_n1[0] = val_Heat;
+    for (iVar = 0; iVar < nVar; iVar++) 
+    {
+      Solution_time_n [iVar]  = val_EM[iVar];
+      Solution_time_n1[iVar]  = val_EM[iVar];
+    }
   }
 
   if (config->GetKind_ConvNumScheme_Heat() == SPACE_CENTERED) {
@@ -90,8 +96,8 @@ CMaxwellVariable::CMaxwellVariable(su2double val_Heat, unsigned short val_nDim, 
   }
 
   if (multizone){
-    Solution_BGS_k  = new su2double [1];
-    Solution_BGS_k[0] = val_Heat;
+    Solution_BGS_k  = new su2double [nVar];
+    for (iVar = 0; iVar < nVar; iVar++) Solution_BGS_k[iVar]  = val_EM[iVar];
   }
 
 }

@@ -1,7 +1,7 @@
 /*!
  * \file CMaxwellVariable.hpp
  * \brief Class for defining the variables of the finite-volume heat equation solver.
- * \author F. Palacios, T. Economon
+ * \author Wenyin Wei
  * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
@@ -47,6 +47,7 @@
  */
 class CMaxwellVariable : public CVariable {
 protected:
+  // TODO: The following attribute Solution_Direct is inherited from the heat module. Not sure if they are necessary
   su2double* Solution_Direct;  /*!< \brief Direct solution container for use in the adjoint Heat solver. */
   su2double* Solution_BGS_k;   /*!< \brief Old solution container for BGS iterations ---*/
 
@@ -59,12 +60,12 @@ public:
 
   /*!
    * \overload
-   * \param[in] val_Heat - Values of the Heat solution (initialization value).
+   * \param[in] val_EM - Values of the electromagnetic field solution (initialization value).
    * \param[in] val_nDim - Number of dimensions of the problem.
    * \param[in] val_nvar - Number of variables of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  CMaxwellVariable(su2double val_Heat, unsigned short val_nDim, unsigned short val_nvar, CConfig *config);
+  CMaxwellVariable(su2double *val_EM, unsigned short val_nDim, unsigned short val_nvar, CConfig *config);
 
   /*!
    * \brief Destructor of the class.
