@@ -2628,6 +2628,45 @@ public:
 };
 
 /*!
+ * \class CUpwSca_Maxwell
+ * \brief Class for doing a scalar upwind solver for the Maxwell electromagnetic convection equation.
+ * \ingroup ConvDiscr
+ * \author Wenyin Wei
+ * \version 6.2.0 "Falcon"
+ */
+class CUpwSca_Maxwell : public CNumerics {
+private:
+  su2double *Velocity_i, *Velocity_j;
+  bool implicit, grid_movement;
+  su2double q_ij, a0, a1;
+  unsigned short iDim;
+
+public:
+
+  /*!
+   * \brief Constructor of the class.
+   * \param[in] val_nDim - Number of dimensions of the problem.
+   * \param[in] val_nVar - Number of variables of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  CUpwSca_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config);
+
+  /*!
+   * \brief Destructor of the class.
+   */
+  ~CUpwSca_Maxwell(void);
+
+  /*!
+   * \brief Compute the scalar upwind flux between two nodes i and j.
+   * \param[out] val_residual - Pointer to the total residual.
+   * \param[out] val_Jacobian_i - Jacobian of the numerical method at node i (implicit computation).
+   * \param[out] val_Jacobian_j - Jacobian of the numerical method at node j (implicit computation).
+   * \param[in] config - Definition of the particular problem.
+   */
+  void ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config);
+};
+
+/*!
  * \class CCentBase_Flow
  * \brief Intermediate class to define centered schemes.
  * \ingroup ConvDiscr
@@ -2969,6 +3008,53 @@ public:
    * \brief Destructor of the class.
    */
   ~CCentSca_Heat(void);
+
+  /*!
+   * \brief Compute the flow residual using a JST method.
+   * \param[out] val_resconv - Pointer to the convective residual.
+   * \param[out] val_resvisc - Pointer to the artificial viscosity residual.
+   * \param[out] val_Jacobian_i - Jacobian of the numerical method at node i (implicit computation).
+   * \param[out] val_Jacobian_j - Jacobian of the numerical method at node j (implicit computation).
+   * \param[in] config - Definition of the particular problem.
+   */
+  void ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j,
+                       CConfig *config);
+};
+
+/*!
+ * \class CCentSca_Maxwell
+ * \brief Class for scalar centered scheme.
+ * \ingroup ConvDiscr
+ * \author Wenyin Wei
+ * \version 6.2.0 "Falcon"
+ */
+class CCentSca_Maxwell : public CNumerics {
+
+private:
+  unsigned short iDim; /*!< \brief Iteration on dimension and variables. */
+  su2double *Diff_Lapl, /*!< \brief Diference of conservative variables and undivided laplacians. */
+  *MeanVelocity, ProjVelocity, ProjVelocity_i, ProjVelocity_j,  /*!< \brief Mean and projected velocities. */
+  Param_Kappa_4, /*!< \brief Artificial dissipation parameters. */
+  Local_Lambda_i, Local_Lambda_j, MeanLambda, /*!< \brief Local eingenvalues. */
+  cte_0, cte_1; /*!< \brief Artificial dissipation values. */
+  bool implicit, /*!< \brief Implicit calculation. */
+  grid_movement; /*!< \brief Modification for grid movement. */
+
+
+public:
+
+  /*!
+   * \brief Constructor of the class.
+   * \param[in] val_nDim - Number of dimension of the problem.
+   * \param[in] val_nVar - Number of variables of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  CCentSca_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config);
+
+  /*!
+   * \brief Destructor of the class.
+   */
+  ~CCentSca_Maxwell(void);
 
   /*!
    * \brief Compute the flow residual using a JST method.
