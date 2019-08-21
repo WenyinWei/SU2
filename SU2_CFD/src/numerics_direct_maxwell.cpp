@@ -1,7 +1,7 @@
 /*!
  * \file numerics_direct_maxwell.cpp
  * \brief This file contains all the convective term discretization.
- * \author F. Palacios, T. Economon
+ * \author Wenyin Wei 
  * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
@@ -174,6 +174,7 @@ void CCentSca_Maxwell::ComputeResidual(su2double *val_residual, su2double **val_
 
 }
 
+const unsigned short MAXW_EM_DIM = 6;
 CAvgGrad_Maxwell::CAvgGrad_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
   implicit        = (config->GetKind_TimeIntScheme_Heat() == EULER_IMPLICIT); //TODO, Heat module characters
@@ -185,6 +186,11 @@ CAvgGrad_Maxwell::CAvgGrad_Maxwell(unsigned short val_nDim, unsigned short val_n
   for (iVar = 0; iVar < nVar; iVar++)
     Mean_GradHeatVar[iVar] = new su2double [nDim]; //TODO, Heat module characters
 
+  Aofn = new su2double* [MAXW_EM_DIM]; // Aofn, short for \tilde{A}(n)^{+}, The dimension is 6 because Maxwell curl operator only works in 3D
+  for (iVar = 0; iVar < MAXW_EM_DIM; iVar++)
+    Aofn[iVar] = new su2double [MAXW_EM_DIM]; 
+  
+
 }
 
 CAvgGrad_Maxwell::~CAvgGrad_Maxwell(void) {
@@ -195,6 +201,9 @@ CAvgGrad_Maxwell::~CAvgGrad_Maxwell(void) {
   for (iVar = 0; iVar < nVar; iVar++)
     delete [] Mean_GradHeatVar[iVar]; //TODO, Heat module characters
   delete [] Mean_GradHeatVar; //TODO, Heat module characters
+  for (iVar = 0; iVar < MAXW_EM_DIM; iVar++)
+    delete [] Aofn[iVar]; 
+  delete [] Aofn; 
 
 }
 
@@ -208,6 +217,18 @@ void CAvgGrad_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jaco
   AD::SetPreaccIn(Thermal_Diffusivity_i); AD::SetPreaccIn(Thermal_Conductivity_j);
 
   Thermal_Diffusivity_Mean = 0.5*(Thermal_Diffusivity_i + Thermal_Diffusivity_j);
+
+  
+
+  su2double eps ;// permittivity
+  su2double mu  ;// permeability
+  su2double v = 1/sqrt(eps*mu);
+  Aofn[0][0]=(pow(n[2],2)+pow(n[1],2))*v; Aofn[0][1]=-n[0]*n[1]*v;                Aofn[0][2]=-n[0]*n[2]*v;                Aofn[0][3]=0;                           Aofn[0][4]=n[2]/eps;                    Aofn[0][5]=-n[1]/eps;
+  Aofn[1][0]=-n[0]*n[1]*v ;               Aofn[1][1]=(pow(n[0],2)+pow(n[2],2))*v; Aofn[1][2]=-n[1]*n[2]*v ;               Aofn[1][3]=-n[2]/eps ;                  Aofn[1][4]=0;                           Aofn[1][5]=n[0]/eps;
+  Aofn[2][0]=-n[0]*n[2]*v ;               Aofn[2][1]=-n[1]*n[2]*v ;               Aofn[2][2]=(pow(n[0],2)+pow(n[1],2))*v; Aofn[2][3]=n[1]/eps ;                   Aofn[2][4]=-n[0]/eps;                   Aofn[2][5]=0;
+  Aofn[3][0]=0 ;                          Aofn[3][1]=-n[2]/mu ;                   Aofn[3][2]=n[1]/mu;                     Aofn[3][3]=(pow(n[2],2)+pow(n[1],2))*v; Aofn[3][4]=-n[0]*n[1]*v;                Aofn[3][5]=-n[0]*n[2]*v;
+  Aofn[4][0]=n[2]/mu ;                    Aofn[4][1]=0 ;                          Aofn[4][2]=-n[0]/mu;                    Aofn[4][3]=-n[0]*n[1]*v;                Aofn[4][4]=(pow(n[0],2)+pow(n[2],2))*v; Aofn[4][5]=-n[1]*n[2]*v;
+  Aofn[5][0]=-n[1]/mu ;                   Aofn[5][1]=n[0]/mu ;                    Aofn[5][2]=0;                           Aofn[5][3]=-n[0]*n[2]*v;                Aofn[5][4]=-n[1]*n[2]*v;                Aofn[5][5]=(pow(n[0],2)+pow(n[1],2))*v;
 
   /*--- Compute vector going from iPoint to jPoint ---*/
 
@@ -232,6 +253,7 @@ void CAvgGrad_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jaco
   }
 
   val_residual[0] = Thermal_Diffusivity_Mean*Proj_Mean_GradHeatVar_Corrected[0]; //TODO, Heat module characters
+
 
   /*--- For Jacobians -> Use of TSL approx. to compute derivatives of the gradients ---*/
   if (implicit) {
