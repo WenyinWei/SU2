@@ -38,141 +38,171 @@
 #include "../include/numerics_structure.hpp"
 #include <limits>
 
-CUpwSca_Maxwell::CUpwSca_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
-
-  implicit        = (config->GetKind_TimeIntScheme_Turb() == EULER_IMPLICIT);
-  grid_movement   = config->GetGrid_Movement();
-
-  Velocity_i = new su2double [nDim];
-  Velocity_j = new su2double [nDim];
-
-  Laminar_Viscosity_i = config->GetViscosity_FreeStreamND();
-  Laminar_Viscosity_j = config->GetViscosity_FreeStreamND();
+su2double** AofnPN(su2double& eps, su2double& mu, bool& positive)
+{
+  su2doubleAofn = new su2double* [6];
+  for (unsigned short i = 0; i < 6; i++)
+  {
+    Aofn[i] = new su2double [6]();
+  }
+  
+  su2double v = 1/sqrt(eps*mu);
+  if (positive)
+  {
+    Aofn[0][0]=(pow(n[2],2)+pow(n[1],2))*v; Aofn[0][1]=-n[0]*n[1]*v;                Aofn[0][2]=-n[0]*n[2]*v;                Aofn[0][3]=0;                           Aofn[0][4]=n[2]/eps;                    Aofn[0][5]=-n[1]/eps;
+    Aofn[1][0]=-n[0]*n[1]*v ;               Aofn[1][1]=(pow(n[0],2)+pow(n[2],2))*v; Aofn[1][2]=-n[1]*n[2]*v ;               Aofn[1][3]=-n[2]/eps ;                  Aofn[1][4]=0;                           Aofn[1][5]=n[0]/eps;
+    Aofn[2][0]=-n[0]*n[2]*v ;               Aofn[2][1]=-n[1]*n[2]*v ;               Aofn[2][2]=(pow(n[0],2)+pow(n[1],2))*v; Aofn[2][3]=n[1]/eps ;                   Aofn[2][4]=-n[0]/eps;                   Aofn[2][5]=0;
+    Aofn[3][0]=0 ;                          Aofn[3][1]=-n[2]/mu ;                   Aofn[3][2]=n[1]/mu;                     Aofn[3][3]=(pow(n[2],2)+pow(n[1],2))*v; Aofn[3][4]=-n[0]*n[1]*v;                Aofn[3][5]=-n[0]*n[2]*v;
+    Aofn[4][0]=n[2]/mu ;                    Aofn[4][1]=0 ;                          Aofn[4][2]=-n[0]/mu;                    Aofn[4][3]=-n[0]*n[1]*v;                Aofn[4][4]=(pow(n[0],2)+pow(n[2],2))*v; Aofn[4][5]=-n[1]*n[2]*v;
+    Aofn[5][0]=-n[1]/mu ;                   Aofn[5][1]=n[0]/mu ;                    Aofn[5][2]=0;                           Aofn[5][3]=-n[0]*n[2]*v;                Aofn[5][4]=-n[1]*n[2]*v;                Aofn[5][5]=(pow(n[0],2)+pow(n[1],2))*v;
+  }
+  else
+  {
+    Aofn[0][0]=-(pow(n[2],2)+pow(n[1],2))*v;Aofn[0][1]=n[0]*n[1]*v;                 Aofn[0][2]=n[0]*n[2]*v;                 Aofn[0][3]=0;                           Aofn[0][4]=n[2]/eps;                    Aofn[0][5]=-n[1]/eps;
+    Aofn[1][0]=n[0]*n[1]*v ;                Aofn[1][1]=-(pow(n[0],2)+pow(n[2],2))*v;Aofn[1][2]=n[1]*n[2]*v ;                Aofn[1][3]=-n[2]/eps ;                  Aofn[1][4]=0;                           Aofn[1][5]=n[0]/eps;
+    Aofn[2][0]=n[0]*n[2]*v ;                Aofn[2][1]=n[1]*n[2]*v ;                Aofn[2][2]=-(pow(n[0],2)+pow(n[1],2))*v;Aofn[2][3]=n[1]/eps ;                   Aofn[2][4]=-n[0]/eps;                   Aofn[2][5]=0;
+    Aofn[3][0]=0 ;                          Aofn[3][1]=-n[2]/mu ;                   Aofn[3][2]=n[1]/mu;                     Aofn[3][3]=-(pow(n[2],2)+pow(n[1],2))*v; Aofn[3][4]=n[0]*n[1]*v;                Aofn[3][5]=n[0]*n[2]*v;
+    Aofn[4][0]=n[2]/mu ;                    Aofn[4][1]=0 ;                          Aofn[4][2]=-n[0]/mu;                    Aofn[4][3]=n[0]*n[1]*v;                Aofn[4][4]=-(pow(n[0],2)+pow(n[2],2))*v; Aofn[4][5]=n[1]*n[2]*v;
+    Aofn[5][0]=-n[1]/mu ;                   Aofn[5][1]=n[0]/mu ;                    Aofn[5][2]=0;                           Aofn[5][3]=n[0]*n[2]*v;                Aofn[5][4]=n[1]*n[2]*v;                  Aofn[5][5]=-(pow(n[0],2)+pow(n[1],2))*v;
+  }
+  return Aofn;
 }
 
-CUpwSca_Maxwell::~CUpwSca_Maxwell(void) {
+// CUpwSca_Maxwell::CUpwSca_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
-  delete [] Velocity_i;
-  delete [] Velocity_j;
+//   implicit        = (config->GetKind_TimeIntScheme_Turb() == EULER_IMPLICIT);
+//   grid_movement   = config->GetGrid_Movement();
 
-}
+//   Velocity_i = new su2double [nDim];
+//   Velocity_j = new su2double [nDim];
 
-void CUpwSca_Maxwell::ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config) {
+//   Laminar_Viscosity_i = config->GetViscosity_FreeStreamND();
+//   Laminar_Viscosity_j = config->GetViscosity_FreeStreamND();
+// }
 
-  q_ij = 0.0;
+// CUpwSca_Maxwell::~CUpwSca_Maxwell(void) {
 
-  AD::StartPreacc();
-  AD::SetPreaccIn(V_i, nDim+1); AD::SetPreaccIn(V_j, nDim+1);
-  AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
-  AD::SetPreaccIn(Normal, nDim);
-  if (grid_movement) {
-    AD::SetPreaccIn(GridVel_i, nDim); AD::SetPreaccIn(GridVel_j, nDim);
-  }
+//   delete [] Velocity_i;
+//   delete [] Velocity_j;
 
-  for (iDim = 0; iDim < nDim; iDim++) {
-    Velocity_i[iDim] = V_i[iDim+1];
-    Velocity_j[iDim] = V_j[iDim+1];
-    q_ij += 0.5*(Velocity_i[iDim]+Velocity_j[iDim])*Normal[iDim];
-  }
+// }
 
-  a0 = 0.5*(q_ij+fabs(q_ij));
-  a1 = 0.5*(q_ij-fabs(q_ij));
-  val_residual[0] = a0*Temp_i+a1*Temp_j;
+// void CUpwSca_Maxwell::ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config) {
 
-  if (implicit) {
-    val_Jacobian_i[0][0] = a0;
-    val_Jacobian_j[0][0] = a1;
-  }
+//   q_ij = 0.0;
 
-  AD::SetPreaccOut(val_residual[0]);
-  AD::EndPreacc();
+//   AD::StartPreacc();
+//   AD::SetPreaccIn(V_i, nDim+1); AD::SetPreaccIn(V_j, nDim+1);
+//   AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
+//   AD::SetPreaccIn(Normal, nDim);
+//   if (grid_movement) {
+//     AD::SetPreaccIn(GridVel_i, nDim); AD::SetPreaccIn(GridVel_j, nDim);
+//   }
 
-}
+//   for (iDim = 0; iDim < nDim; iDim++) {
+//     Velocity_i[iDim] = V_i[iDim+1];
+//     Velocity_j[iDim] = V_j[iDim+1];
+//     q_ij += 0.5*(Velocity_i[iDim]+Velocity_j[iDim])*Normal[iDim];
+//   }
 
-CCentSca_Maxwell::CCentSca_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
+//   a0 = 0.5*(q_ij+fabs(q_ij));
+//   a1 = 0.5*(q_ij-fabs(q_ij));
+//   val_residual[0] = a0*Temp_i+a1*Temp_j;
 
-  implicit        = (config->GetKind_TimeIntScheme_Turb() == EULER_IMPLICIT);
-  grid_movement   = config->GetGrid_Movement();
+//   if (implicit) {
+//     val_Jacobian_i[0][0] = a0;
+//     val_Jacobian_j[0][0] = a1;
+//   }
 
-  MeanVelocity = new su2double [nDim];
+//   AD::SetPreaccOut(val_residual[0]);
+//   AD::EndPreacc();
 
-  Laminar_Viscosity_i = config->GetViscosity_FreeStreamND(); //TODO, Heat module characters
-  Laminar_Viscosity_j = config->GetViscosity_FreeStreamND(); //TODO, Heat module characters
+// }
 
-  Param_Kappa_4 = config->GetKappa_4th_Heat(); //TODO, Heat module characters
-  Diff_Lapl = new su2double [nVar];
-}
+// CCentSca_Maxwell::CCentSca_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
-CCentSca_Maxwell::~CCentSca_Maxwell(void) {
+//   implicit        = (config->GetKind_TimeIntScheme_Turb() == EULER_IMPLICIT);
+//   grid_movement   = config->GetGrid_Movement();
 
-  delete [] MeanVelocity;
-  delete [] Diff_Lapl;
+//   MeanVelocity = new su2double [nDim];
 
-}
+//   Laminar_Viscosity_i = config->GetViscosity_FreeStreamND(); //TODO, Heat module characters
+//   Laminar_Viscosity_j = config->GetViscosity_FreeStreamND(); //TODO, Heat module characters
 
-void CCentSca_Maxwell::ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config) {
+//   Param_Kappa_4 = config->GetKappa_4th_Heat(); //TODO, Heat module characters
+//   Diff_Lapl = new su2double [nVar];
+// }
 
-  AD::StartPreacc();
-  AD::SetPreaccIn(V_i, nDim+3); AD::SetPreaccIn(V_j, nDim+3);
-  AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
-  AD::SetPreaccIn(Und_Lapl_i, nVar); AD::SetPreaccIn(Und_Lapl_j, nVar);
-  AD::SetPreaccIn(Normal, nDim);
-  if (grid_movement) {
-    AD::SetPreaccIn(GridVel_i, nDim); AD::SetPreaccIn(GridVel_j, nDim);
-  }
+// CCentSca_Maxwell::~CCentSca_Maxwell(void) {
 
-  /*--- Primitive variables at point i and j ---*/
+//   delete [] MeanVelocity;
+//   delete [] Diff_Lapl;
 
-  Pressure_i =    V_i[0];       Pressure_j = V_j[0];
-  DensityInc_i =  V_i[nDim+2];  DensityInc_j = V_j[nDim+2];
-  BetaInc2_i =    V_i[nDim+3];  BetaInc2_j = V_j[nDim+3];
+// }
 
-  /*--- Projected velocities at the current edge ---*/
+// void CCentSca_Maxwell::ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config) {
 
-  ProjVelocity = 0.0; ProjVelocity_i = 0.0; ProjVelocity_j = 0.0; Area = 0.0;
-  for (iDim = 0; iDim < nDim; iDim++) {
-    ProjVelocity_i += V_i[iDim+1]*Normal[iDim];
-    ProjVelocity_j += V_j[iDim+1]*Normal[iDim];
-    Area += Normal[iDim]*Normal[iDim];
-  }
-  Area = sqrt(Area);
+//   AD::StartPreacc();
+//   AD::SetPreaccIn(V_i, nDim+3); AD::SetPreaccIn(V_j, nDim+3);
+//   AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
+//   AD::SetPreaccIn(Und_Lapl_i, nVar); AD::SetPreaccIn(Und_Lapl_j, nVar);
+//   AD::SetPreaccIn(Normal, nDim);
+//   if (grid_movement) {
+//     AD::SetPreaccIn(GridVel_i, nDim); AD::SetPreaccIn(GridVel_j, nDim);
+//   }
 
-  /*--- Computing the second order centered scheme part ---*/
+//   /*--- Primitive variables at point i and j ---*/
 
-  ProjVelocity = 0.5*(ProjVelocity_i+ProjVelocity_j);
+//   Pressure_i =    V_i[0];       Pressure_j = V_j[0];
+//   DensityInc_i =  V_i[nDim+2];  DensityInc_j = V_j[nDim+2];
+//   BetaInc2_i =    V_i[nDim+3];  BetaInc2_j = V_j[nDim+3];
 
-  val_residual[0] = 0.5*(Temp_i + Temp_j)*ProjVelocity;
+//   /*--- Projected velocities at the current edge ---*/
 
-  if (implicit) {
-    val_Jacobian_i[0][0] = 0.5*ProjVelocity;
-    val_Jacobian_j[0][0] = 0.5*ProjVelocity;
-  }
+//   ProjVelocity = 0.0; ProjVelocity_i = 0.0; ProjVelocity_j = 0.0; Area = 0.0;
+//   for (iDim = 0; iDim < nDim; iDim++) {
+//     ProjVelocity_i += V_i[iDim+1]*Normal[iDim];
+//     ProjVelocity_j += V_j[iDim+1]*Normal[iDim];
+//     Area += Normal[iDim]*Normal[iDim];
+//   }
+//   Area = sqrt(Area);
 
-  /*--- Adding artificial dissipation to stabilize the centered scheme ---*/
+//   /*--- Computing the second order centered scheme part ---*/
 
-  Diff_Lapl[0] = Und_Lapl_i[0]-Und_Lapl_j[0];
+//   ProjVelocity = 0.5*(ProjVelocity_i+ProjVelocity_j);
 
-  SoundSpeed_i = sqrt(ProjVelocity_i*ProjVelocity_i + (BetaInc2_i/DensityInc_i)*Area*Area);
-  SoundSpeed_j = sqrt(ProjVelocity_j*ProjVelocity_j + (BetaInc2_j/DensityInc_j)*Area*Area);
+//   val_residual[0] = 0.5*(Temp_i + Temp_j)*ProjVelocity;
 
-  Local_Lambda_i = fabs(ProjVelocity_i)+SoundSpeed_i;
-  Local_Lambda_j = fabs(ProjVelocity_j)+SoundSpeed_j;
-  MeanLambda = 0.5*(Local_Lambda_i+Local_Lambda_j);
+//   if (implicit) {
+//     val_Jacobian_i[0][0] = 0.5*ProjVelocity;
+//     val_Jacobian_j[0][0] = 0.5*ProjVelocity;
+//   }
 
-  val_residual[0] += -Param_Kappa_4*Diff_Lapl[0]*MeanLambda;
+//   /*--- Adding artificial dissipation to stabilize the centered scheme ---*/
 
-  if (implicit) {
-    cte_0 = Param_Kappa_4*su2double(Neighbor_i+1)*MeanLambda;
-    cte_1 = Param_Kappa_4*su2double(Neighbor_j+1)*MeanLambda;
+//   Diff_Lapl[0] = Und_Lapl_i[0]-Und_Lapl_j[0];
 
-    val_Jacobian_i[0][0] += cte_0;
-    val_Jacobian_j[0][0] -= cte_1;
-  }
+//   SoundSpeed_i = sqrt(ProjVelocity_i*ProjVelocity_i + (BetaInc2_i/DensityInc_i)*Area*Area);
+//   SoundSpeed_j = sqrt(ProjVelocity_j*ProjVelocity_j + (BetaInc2_j/DensityInc_j)*Area*Area);
 
-  AD::SetPreaccOut(val_residual[0]);
-  AD::EndPreacc();
+//   Local_Lambda_i = fabs(ProjVelocity_i)+SoundSpeed_i;
+//   Local_Lambda_j = fabs(ProjVelocity_j)+SoundSpeed_j;
+//   MeanLambda = 0.5*(Local_Lambda_i+Local_Lambda_j);
 
-}
+//   val_residual[0] += -Param_Kappa_4*Diff_Lapl[0]*MeanLambda;
+
+//   if (implicit) {
+//     cte_0 = Param_Kappa_4*su2double(Neighbor_i+1)*MeanLambda;
+//     cte_1 = Param_Kappa_4*su2double(Neighbor_j+1)*MeanLambda;
+
+//     val_Jacobian_i[0][0] += cte_0;
+//     val_Jacobian_j[0][0] -= cte_1;
+//   }
+
+//   AD::SetPreaccOut(val_residual[0]);
+//   AD::EndPreacc();
+
+// }
 
 const unsigned short MAXW_EM_DIM = 6;
 CAvgGrad_Maxwell::CAvgGrad_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
@@ -186,9 +216,9 @@ CAvgGrad_Maxwell::CAvgGrad_Maxwell(unsigned short val_nDim, unsigned short val_n
   for (iVar = 0; iVar < nVar; iVar++)
     Mean_GradHeatVar[iVar] = new su2double [nDim]; //TODO, Heat module characters
 
-  Aofn = new su2double* [MAXW_EM_DIM]; // Aofn, short for \tilde{A}(n)^{+}, The dimension is 6 because Maxwell curl operator only works in 3D
+  Aofn_i = new su2double* [MAXW_EM_DIM]; // Aofn_i, short for \tilde{A}(n)^{+}, The dimension is 6 because Maxwell curl operator only works in 3D
   for (iVar = 0; iVar < MAXW_EM_DIM; iVar++)
-    Aofn[iVar] = new su2double [MAXW_EM_DIM]; 
+    Aofn_i[iVar] = new su2double [MAXW_EM_DIM]; 
   
 
 }
@@ -202,8 +232,8 @@ CAvgGrad_Maxwell::~CAvgGrad_Maxwell(void) {
     delete [] Mean_GradHeatVar[iVar]; //TODO, Heat module characters
   delete [] Mean_GradHeatVar; //TODO, Heat module characters
   for (iVar = 0; iVar < MAXW_EM_DIM; iVar++)
-    delete [] Aofn[iVar]; 
-  delete [] Aofn; 
+    delete [] Aofn_i[iVar]; 
+  delete [] Aofn_i; 
 
 }
 
@@ -213,6 +243,7 @@ void CAvgGrad_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jaco
   AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
   AD::SetPreaccIn(Normal, nDim);
   AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
+  AD::SetPreaccIn(EM_U_i); AD::SetPreaccIn(EM_U_j);
   AD::SetPreaccIn(ConsVar_Grad_i[0],nDim); AD::SetPreaccIn(ConsVar_Grad_j[0],nDim);
   AD::SetPreaccIn(Thermal_Diffusivity_i); AD::SetPreaccIn(Thermal_Conductivity_j);
 
@@ -220,18 +251,15 @@ void CAvgGrad_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jaco
 
   
 
-  su2double eps ;// permittivity
-  su2double mu  ;// permeability
-  su2double v = 1/sqrt(eps*mu);
-  Aofn[0][0]=(pow(n[2],2)+pow(n[1],2))*v; Aofn[0][1]=-n[0]*n[1]*v;                Aofn[0][2]=-n[0]*n[2]*v;                Aofn[0][3]=0;                           Aofn[0][4]=n[2]/eps;                    Aofn[0][5]=-n[1]/eps;
-  Aofn[1][0]=-n[0]*n[1]*v ;               Aofn[1][1]=(pow(n[0],2)+pow(n[2],2))*v; Aofn[1][2]=-n[1]*n[2]*v ;               Aofn[1][3]=-n[2]/eps ;                  Aofn[1][4]=0;                           Aofn[1][5]=n[0]/eps;
-  Aofn[2][0]=-n[0]*n[2]*v ;               Aofn[2][1]=-n[1]*n[2]*v ;               Aofn[2][2]=(pow(n[0],2)+pow(n[1],2))*v; Aofn[2][3]=n[1]/eps ;                   Aofn[2][4]=-n[0]/eps;                   Aofn[2][5]=0;
-  Aofn[3][0]=0 ;                          Aofn[3][1]=-n[2]/mu ;                   Aofn[3][2]=n[1]/mu;                     Aofn[3][3]=(pow(n[2],2)+pow(n[1],2))*v; Aofn[3][4]=-n[0]*n[1]*v;                Aofn[3][5]=-n[0]*n[2]*v;
-  Aofn[4][0]=n[2]/mu ;                    Aofn[4][1]=0 ;                          Aofn[4][2]=-n[0]/mu;                    Aofn[4][3]=-n[0]*n[1]*v;                Aofn[4][4]=(pow(n[0],2)+pow(n[2],2))*v; Aofn[4][5]=-n[1]*n[2]*v;
-  Aofn[5][0]=-n[1]/mu ;                   Aofn[5][1]=n[0]/mu ;                    Aofn[5][2]=0;                           Aofn[5][3]=-n[0]*n[2]*v;                Aofn[5][4]=-n[1]*n[2]*v;                Aofn[5][5]=(pow(n[0],2)+pow(n[1],2))*v;
+  su2double eps_i, eps_j;// permittivity
+  su2double mu_i,  mu_j;// permeability
+
+  Aofn_i = Aofn(eps, mu, true);
+  Aofn_j = Aofn(eps, mu, false);
+  Y_i = sqrt(eps_i/mu_i); Z_i =1/Y_i;
+  Y_j = sqrt(eps_j/mu_j); Z_j =1/Y_j;
 
   /*--- Compute vector going from iPoint to jPoint ---*/
-
   dist_ij_2 = 0; proj_vector_ij = 0;
   for (iDim = 0; iDim < nDim; iDim++) {
     Edge_Vector[iDim] = Coord_j[iDim]-Coord_i[iDim];
@@ -243,23 +271,36 @@ void CAvgGrad_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jaco
 
   /*--- Mean gradient approximation. Projection of the mean gradient in the direction of the edge ---*/
   for (iVar = 0; iVar < nVar; iVar++) {
-    Proj_Mean_GradHeatVar_Normal[iVar] = 0.0; //TODO, Heat module characters
-    Proj_Mean_GradHeatVar_Corrected[iVar] = 0.0; //TODO, Heat module characters
+    Proj_Mean_GradHeatVar_Normal[iVar] = 0.0; 
+    Proj_Mean_GradHeatVar_Corrected[iVar] = 0.0; 
     for (iDim = 0; iDim < nDim; iDim++) {
-      Mean_GradHeatVar[iVar][iDim] = 0.5*(ConsVar_Grad_i[iVar][iDim] + ConsVar_Grad_j[iVar][iDim]); //TODO, Heat module characters
-      Proj_Mean_GradHeatVar_Normal[iVar] += Mean_GradHeatVar[iVar][iDim]*Normal[iDim]; //TODO, Heat module characters
+      Mean_GradHeatVar[iVar][iDim] = 0.5*(ConsVar_Grad_i[iVar][iDim] + ConsVar_Grad_j[iVar][iDim]); 
+      Proj_Mean_GradHeatVar_Normal[iVar] += Mean_GradHeatVar[iVar][iDim]*Normal[iDim]; 
     }
-    Proj_Mean_GradHeatVar_Corrected[iVar] = Proj_Mean_GradHeatVar_Normal[iVar]; //TODO, Heat module characters
+    Proj_Mean_GradHeatVar_Corrected[iVar] = Proj_Mean_GradHeatVar_Normal[iVar];
   }
 
-  val_residual[0] = Thermal_Diffusivity_Mean*Proj_Mean_GradHeatVar_Corrected[0]; //TODO, Heat module characters
+  su2double* Temp_Six_Vector_i = new su2double [nVar]();
+  su2double* Temp_Six_Vector_j = new su2double [nVar]();
+  for (iVar = 0; iVar < nVar; iVar++) 
+    for (jVar = 0; jVar < nVar; iVar++) 
+    {
+      Temp_Six_Vector_i[iVar] += Aofn_i[iVar][jVar]*ConsVar[jVar];
+      Temp_Six_Vector_j[iVar] += Aofn_j[iVar][jVar]*ConsVar[jVar];
+    }
+    
+
+
+
+  val_residual[0] = Thermal_Diffusivity_Mean*Proj_Mean_GradHeatVar_Corrected[0]; 
 
 
   /*--- For Jacobians -> Use of TSL approx. to compute derivatives of the gradients ---*/
-  if (implicit) {
-    Jacobian_i[0][0] = -Thermal_Diffusivity_Mean*proj_vector_ij;
-    Jacobian_j[0][0] = Thermal_Diffusivity_Mean*proj_vector_ij;
-  }
+  // TODO: Maxwell equation evolution have not yet implemented the flux contribution to Jacobian
+  // if (implicit) {
+  //   Jacobian_i[0][0] = -Thermal_Diffusivity_Mean*proj_vector_ij;
+  //   Jacobian_j[0][0] = Thermal_Diffusivity_Mean*proj_vector_ij;
+  // }
 
   AD::SetPreaccOut(val_residual, nVar);
   AD::EndPreacc();
@@ -296,12 +337,13 @@ CAvgGradCorrected_Maxwell::~CAvgGradCorrected_Maxwell(void) {
 
 void CAvgGradCorrected_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
 
-  AD::StartPreacc();
-  AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
-  AD::SetPreaccIn(Normal, nDim);
-  AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
-  AD::SetPreaccIn(ConsVar_Grad_i[0],nDim); AD::SetPreaccIn(ConsVar_Grad_j[0],nDim);
-  AD::SetPreaccIn(Thermal_Diffusivity_i); AD::SetPreaccIn(Thermal_Diffusivity_j);
+  // TODO: No idea how to set an appropriate preprocess of adaptive mesh for Maxwell
+  // AD::StartPreacc();
+  // AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
+  // AD::SetPreaccIn(Normal, nDim);
+  // AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
+  // AD::SetPreaccIn(ConsVar_Grad_i[0],nDim); AD::SetPreaccIn(ConsVar_Grad_j[0],nDim);
+  // AD::SetPreaccIn(Thermal_Diffusivity_i); AD::SetPreaccIn(Thermal_Diffusivity_j);
 
   Thermal_Diffusivity_Mean = 0.5*(Thermal_Diffusivity_i + Thermal_Diffusivity_j);
 
