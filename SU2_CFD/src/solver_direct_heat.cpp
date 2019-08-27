@@ -586,8 +586,6 @@ void CHeatSolverFVM::Upwind_Residual(CGeometry *geometry, CSolver **solver_conta
 
             Gradient_i = solver_container[FLOW_SOL]->node[iPoint]->GetGradient_Primitive();
             Gradient_j = solver_container[FLOW_SOL]->node[jPoint]->GetGradient_Primitive();
-            Temp_i_Grad = node[iPoint]->GetGradient();
-            Temp_j_Grad = node[jPoint]->GetGradient();
 
             /*Loop to correct the flow variables*/
             for (iVar = 0; iVar < nVarFlow; iVar++) {
