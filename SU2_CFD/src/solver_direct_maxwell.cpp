@@ -492,152 +492,13 @@ void CMaxwellSolver::SetUndivided_Laplacian(CGeometry *geometry, CConfig *config
 }
 
 void CMaxwellSolver::Centered_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics,
-                       CConfig *config, unsigned short iMesh, unsigned short iRKStep) {
+                       CConfig *config, unsigned short iMesh, unsigned short iRKStep) { }
 
-  su2double *V_i, *V_j, Temp_i, Temp_j;
-  unsigned long iEdge, iPoint, jPoint;
-  bool flow = ((config->GetKind_Solver() == NAVIER_STOKES)
-               || (config->GetKind_Solver() == RANS)
-               || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
-               || (config->GetKind_Solver() == DISC_ADJ_RANS));
+void CMaxwellSolver::Upwind_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short iMesh) { }
 
-  if(flow) {
+void CMaxwellSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short iMesh, unsigned short iRKStep) { }
 
-    nVarFlow = solver_container[FLOW_SOL]->GetnVar();
-
-      for (iEdge = 0; iEdge < geometry->GetnEdge(); iEdge++) {
-
-        /*--- Points in edge ---*/
-        iPoint = geometry->edge[iEdge]->GetNode(0);
-        jPoint = geometry->edge[iEdge]->GetNode(1);
-        numerics->SetNormal(geometry->edge[iEdge]->GetNormal());
-
-        /*--- Primitive variables w/o reconstruction ---*/
-        V_i = solver_container[FLOW_SOL]->node[iPoint]->GetPrimitive();
-        V_j = solver_container[FLOW_SOL]->node[jPoint]->GetPrimitive();
-
-        Temp_i = node[iPoint]->GetSolution(0);
-        Temp_j = node[jPoint]->GetSolution(0);
-
-        numerics->SetUndivided_Laplacian(node[iPoint]->GetUndivided_Laplacian(), node[jPoint]->GetUndivided_Laplacian());
-        numerics->SetNeighbor(geometry->node[iPoint]->GetnNeighbor(), geometry->node[jPoint]->GetnNeighbor());
-
-        numerics->SetPrimitive(V_i, V_j);
-        numerics->SetTemperature(Temp_i, Temp_j);
-
-        numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
-
-        LinSysRes.AddBlock(iPoint, Residual);
-        LinSysRes.SubtractBlock(jPoint, Residual);
-
-        /*--- Implicit part ---*/
-
-        Jacobian.AddBlock(iPoint, iPoint, Jacobian_i);
-        Jacobian.AddBlock(iPoint, jPoint, Jacobian_j);
-        Jacobian.SubtractBlock(jPoint, iPoint, Jacobian_i);
-        Jacobian.SubtractBlock(jPoint, jPoint, Jacobian_j);
-      }
-  }
-}
-
-void CMaxwellSolver::Upwind_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short iMesh) {
-
-  su2double *V_i, *V_j, Temp_i, Temp_i_Corrected, Temp_j, Temp_j_Corrected, **Gradient_i, **Gradient_j, Project_Grad_i, Project_Grad_j,
-          **Temp_i_Grad, **Temp_j_Grad, Project_Temp_i_Grad, Project_Temp_j_Grad, Non_Physical = 1.0;
-  unsigned short iDim, iVar;
-  unsigned long iEdge, iPoint, jPoint;
-  bool flow = ((config->GetKind_Solver() == NAVIER_STOKES)
-               || (config->GetKind_Solver() == RANS)
-               || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
-               || (config->GetKind_Solver() == DISC_ADJ_RANS));
-  bool muscl = (config->GetMUSCL_Heat());
-
-  if(flow) {
-
-    nVarFlow = solver_container[FLOW_SOL]->GetnVar();
-
-      for (iEdge = 0; iEdge < geometry->GetnEdge(); iEdge++) {
-
-        /*--- Points in edge ---*/
-        iPoint = geometry->edge[iEdge]->GetNode(0);
-        jPoint = geometry->edge[iEdge]->GetNode(1);
-        numerics->SetNormal(geometry->edge[iEdge]->GetNormal());
-
-        /*--- Primitive variables w/o reconstruction ---*/
-        V_i = solver_container[FLOW_SOL]->node[iPoint]->GetPrimitive();
-        V_j = solver_container[FLOW_SOL]->node[jPoint]->GetPrimitive();
-
-        Temp_i_Grad = node[iPoint]->GetGradient();
-        Temp_j_Grad = node[jPoint]->GetGradient();
-        numerics->SetConsVarGradient(Temp_i_Grad, Temp_j_Grad);
-
-        Temp_i = node[iPoint]->GetSolution(0);
-        Temp_j = node[jPoint]->GetSolution(0);
-
-        /* Second order reconstruction */
-        if (muscl) {
-
-            for (iDim = 0; iDim < nDim; iDim++) {
-              Vector_i[iDim] = 0.5*(geometry->node[jPoint]->GetCoord(iDim) - geometry->node[iPoint]->GetCoord(iDim));
-              Vector_j[iDim] = 0.5*(geometry->node[iPoint]->GetCoord(iDim) - geometry->node[jPoint]->GetCoord(iDim));
-            }
-
-            Gradient_i = solver_container[FLOW_SOL]->node[iPoint]->GetGradient_Primitive();
-            Gradient_j = solver_container[FLOW_SOL]->node[jPoint]->GetGradient_Primitive();
-            Temp_i_Grad = node[iPoint]->GetGradient();
-            Temp_j_Grad = node[jPoint]->GetGradient();
-
-            /*Loop to correct the flow variables*/
-            for (iVar = 0; iVar < nVarFlow; iVar++) {
-
-              /*Apply the Gradient to get the right temperature value on the edge */
-              Project_Grad_i = 0.0; Project_Grad_j = 0.0;
-              for (iDim = 0; iDim < nDim; iDim++) {
-                  Project_Grad_i += Vector_i[iDim]*Gradient_i[iVar][iDim]*Non_Physical;
-                  Project_Grad_j += Vector_j[iDim]*Gradient_j[iVar][iDim]*Non_Physical;
-              }
-
-              Primitive_Flow_i[iVar] = V_i[iVar] + Project_Grad_i;
-              Primitive_Flow_j[iVar] = V_j[iVar] + Project_Grad_j;
-            }
-
-            /* Correct the temperature variables */
-            Project_Temp_i_Grad = 0.0; Project_Temp_j_Grad = 0.0;
-            for (iDim = 0; iDim < nDim; iDim++) {
-                Project_Temp_i_Grad += Vector_i[iDim]*Temp_i_Grad[0][iDim]*Non_Physical;
-                Project_Temp_j_Grad += Vector_j[iDim]*Temp_j_Grad[0][iDim]*Non_Physical;
-            }
-
-            Temp_i_Corrected = Temp_i + Project_Temp_i_Grad;
-            Temp_j_Corrected = Temp_j + Project_Temp_j_Grad;
-
-            numerics->SetPrimitive(Primitive_Flow_i, Primitive_Flow_j);
-            numerics->SetTemperature(Temp_i_Corrected, Temp_j_Corrected);
-        }
-
-        else {
-
-          numerics->SetPrimitive(V_i, V_j);
-          numerics->SetTemperature(Temp_i, Temp_j);
-        }
-
-        numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
-
-        LinSysRes.AddBlock(iPoint, Residual);
-        LinSysRes.SubtractBlock(jPoint, Residual);
-
-        /*--- Implicit part ---*/
-
-        Jacobian.AddBlock(iPoint, iPoint, Jacobian_i);
-        Jacobian.AddBlock(iPoint, jPoint, Jacobian_j);
-        Jacobian.SubtractBlock(jPoint, iPoint, Jacobian_i);
-        Jacobian.SubtractBlock(jPoint, jPoint, Jacobian_j);
-        }
-  }
-
-}
-
-void CMaxwellSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short iMesh, unsigned short iRKStep) {
+void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CNumerics *second_numerics, CConfig *config, unsigned short iMesh) {
 
   su2double laminar_viscosity, Prandtl_Lam, Prandtl_Turb, eddy_viscosity_i, eddy_viscosity_j,
       thermal_diffusivity_i, thermal_diffusivity_j, Temp_i, Temp_j, **Temp_i_Grad, **Temp_j_Grad;
@@ -707,8 +568,6 @@ void CMaxwellSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_cont
     Jacobian.AddBlock(jPoint, jPoint, Jacobian_j);
   }
 }
-
-void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CNumerics *second_numerics, CConfig *config, unsigned short iMesh) { }
 
 void CMaxwellSolver::Set_Heatflux_Areas(CGeometry *geometry, CConfig *config) {
 

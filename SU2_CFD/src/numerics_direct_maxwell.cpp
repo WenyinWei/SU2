@@ -40,13 +40,11 @@
 
 su2double** AofnPN(su2double& eps, su2double& mu, bool& positive)
 {
-  su2doubleAofn = new su2double* [6];
-  for (unsigned short i = 0; i < 6; i++)
-  {
-    Aofn[i] = new su2double [6]();
-  }
+  su2double** Aofn = new su2double* [6];
+  for (unsigned short i = 0; i < 6; i++) Aofn[i] = new su2double [6]();
   
   su2double v = 1/sqrt(eps*mu);
+  
   if (positive)
   {
     Aofn[0][0]=(pow(n[2],2)+pow(n[1],2))*v; Aofn[0][1]=-n[0]*n[1]*v;                Aofn[0][2]=-n[0]*n[2]*v;                Aofn[0][3]=0;                           Aofn[0][4]=n[2]/eps;                    Aofn[0][5]=-n[1]/eps;
@@ -70,7 +68,7 @@ su2double** AofnPN(su2double& eps, su2double& mu, bool& positive)
 
 
 const unsigned short MAXW_EM_DIM = 6;
-CAvgGrad_Maxwell::CAvgGrad_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
+CFluxSplit_Maxwell::CFluxSplit_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
   implicit        = (config->GetKind_TimeIntScheme_Heat() == EULER_IMPLICIT); //TODO, Heat module characters
 
@@ -88,7 +86,7 @@ CAvgGrad_Maxwell::CAvgGrad_Maxwell(unsigned short val_nDim, unsigned short val_n
 
 }
 
-CAvgGrad_Maxwell::~CAvgGrad_Maxwell(void) {
+CFluxSplit_Maxwell::~CFluxSplit_Maxwell(void) {
 
   delete [] Edge_Vector;
   delete [] Proj_Mean_GradHeatVar_Normal; //TODO, Heat module characters
@@ -102,7 +100,7 @@ CAvgGrad_Maxwell::~CAvgGrad_Maxwell(void) {
 
 }
 
-void CAvgGrad_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
+void CFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
 
   AD::StartPreacc();
   AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
