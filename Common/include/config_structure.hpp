@@ -491,8 +491,10 @@ private:
   Kind_TimeIntScheme_AdjFlow,		/*!< \brief Time integration for the adjoint flow equations. */
   Kind_TimeIntScheme_Turb,	/*!< \brief Time integration for the turbulence model. */
   Kind_TimeIntScheme_AdjTurb,	/*!< \brief Time integration for the adjoint turbulence model. */
-  Kind_TimeIntScheme_Heat,	/*!< \brief Time integration for the wave equations. */
+  Kind_TimeIntScheme_Heat,	/*!< \brief Time integration for the heat equations. */
+  Kind_TimeIntScheme_Maxwell,	/*!< \brief Time integration for the maxwell equations. */
   Kind_TimeStep_Heat, /*!< \brief Time stepping method for the (fvm) heat equation. */
+  Kind_TimeStep_Maxwell, /*!< \brief Time stepping method for the (fvm) Maxwell equation. */
   Kind_TimeIntScheme_FEA,	/*!< \brief Time integration for the FEA equations. */
   Kind_SpaceIteScheme_FEA,	/*!< \brief Iterative scheme for nonlinear structural analysis. */
   Kind_ConvNumScheme,			/*!< \brief Global definition of the convective term. */
@@ -4359,9 +4361,18 @@ public:
    *        for the flow equations.
    * \note This value is obtained from the config file, and it is constant
    *       during the computation.
-   * \return Kind of integration scheme for the plasma equations.
+   * \return Kind of integration scheme for the heat equations.
    */
   unsigned short GetKind_TimeIntScheme_Heat(void);
+
+  /*!
+   * \brief Get the kind of integration scheme (explicit or implicit)
+   *        for the maxwell equations.
+   * \note This value is obtained from the config file, and it is constant
+   *       during the computation.
+   * \return Kind of integration scheme for the maxwell equations.
+   */
+  unsigned short GetKind_TimeIntScheme_Maxwell(void);
   
   /*!
    * \brief Get the kind of time stepping

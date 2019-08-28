@@ -1109,6 +1109,8 @@ inline unsigned short CConfig::GetKind_ADER_Predictor(void) { return Kind_ADER_P
 
 inline unsigned short CConfig::GetKind_TimeIntScheme_Heat(void) { return Kind_TimeIntScheme_Heat; }
 
+inline unsigned short CConfig::GetKind_TimeIntScheme_Maxwell(void) { return Kind_TimeIntScheme_Maxwell; }
+
 inline unsigned short CConfig::GetKind_TimeStep_Heat(void) { return Kind_TimeStep_Heat; }
 
 inline unsigned short CConfig::GetKind_TimeIntScheme_FEA(void) { return Kind_TimeIntScheme_FEA; }

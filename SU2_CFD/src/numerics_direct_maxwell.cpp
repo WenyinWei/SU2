@@ -79,8 +79,7 @@ void Compute_Aofn(su2double& eps, su2double& mu, su2double*& n, bool is_positive
 
 CSourceFluxSplit_Maxwell::CSourceFluxSplit_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
-  // implicit        = (config->GetKind_TimeIntScheme_Heat() == EULER_IMPLICIT); //TODO, To replace the Heat module characters
-  // implicit        = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT); //TODO, To imitate Heat module characters
+  implicit        = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT); //TODO, Check it works 
 
   Edge_Vector = new su2double [nDim];
 
@@ -114,8 +113,6 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
   AD::SetPreaccIn(Thermal_Diffusivity_i); AD::SetPreaccIn(Thermal_Conductivity_j);
 
   Thermal_Diffusivity_Mean = 0.5*(Thermal_Diffusivity_i + Thermal_Diffusivity_j);
-
-  
 
   su2double* Temp_Six_Vector_i = new su2double [MAXW_EM_DIM]();
   su2double* Temp_Six_Vector_j = new su2double [MAXW_EM_DIM]();
@@ -169,7 +166,7 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
 CSourceFluxSplitCorrected_Maxwell::CSourceFluxSplitCorrected_Maxwell(unsigned short val_nDim, unsigned short val_nVar,
                                                    CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
-  implicit        = (config->GetKind_TimeIntScheme_Heat() == EULER_IMPLICIT); //TODO, Heat module characters
+  implicit        = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT); //TODO, Check the config function is modified correctly
   // TODO, Heat module characters, many heat variables
   Edge_Vector = new su2double [nDim];
   Proj_Mean_GradHeatVar_Edge = new su2double [nVar];
