@@ -136,7 +136,7 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
   };
   if (dist_ij_2 == 0.0) {proj_vector_ij = 0.0;}
   else proj_vector_ij = proj_vector_ij/dist_ij_2;
-  if (area_face != 0) = sqrt(area_face); 
+  if (area_face != 0) area_face = sqrt(area_face); 
 
   /*--- Compute A*U matrix-vector product ---*/
   for (iVar = 0; iVar < MAXW_EM_DIM; iVar++) 
