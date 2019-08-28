@@ -82,24 +82,30 @@ CSourceFluxSplit_Maxwell::CSourceFluxSplit_Maxwell(unsigned short val_nDim, unsi
 
   implicit        = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT); //TODO, Check it works 
 
-  Edge_Vector = new su2double [nDim];
+  Edge_Vector = new su2double [nDim]();
+  Temp_Six_Vector_i = new su2double [nVar]();
+  Temp_Six_Vector_j = new su2double [nVar]();
 
   // Aofn_i, short for $\tilde{A}(n)^{+}$ or $\tilde{A}(n)^{-}$. 
-  su2double** Aofn_i = new su2double* [MAXW_EM_DIM];
-  su2double** Aofn_j = new su2double* [MAXW_EM_DIM];
-  for (unsigned short iVar = 0; iVar < MAXW_EM_DIM; iVar++) 
+  Aofn_i = new su2double* [nVar];
+  Aofn_j = new su2double* [nVar];
+  for (unsigned short iVar = 0; iVar < nVar; iVar++) 
   {
-    Aofn_i[iVar] = new su2double [MAXW_EM_DIM]();
-    Aofn_j[iVar] = new su2double [MAXW_EM_DIM]();
+    Aofn_i[iVar] = new su2double [nVar]();
+    Aofn_j[iVar] = new su2double [nVar]();
   }
 }
 
 CSourceFluxSplit_Maxwell::~CSourceFluxSplit_Maxwell(void) {
 
   delete [] Edge_Vector;
-  for (iVar = 0; iVar < MAXW_EM_DIM; iVar++)
-    delete [] Aofn_i[iVar]; 
+  for (iVar = 0; iVar < nVar; iVar++)
+  {
+    delete [] Aofn_i[iVar];
+    delete [] Aofn_j[iVar]; 
+  }
   delete [] Aofn_i; 
+  delete [] Aofn_j;
 
 }
 
@@ -107,45 +113,43 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
 
   AD::StartPreacc();
   AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
-  AD::SetPreaccIn(Normal, nDim);
+  AD::SetPreaccIn(Normal, nDim); AD::SetPreaccIn(UnitNormal, nDim);
   AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
   AD::SetPreaccIn(Maxwell_U_i, nVar); AD::SetPreaccIn(Maxwell_U_j, nVar);
   AD::SetPreaccIn(ConsVar_Grad_i, nVar, nDim); AD::SetPreaccIn(ConsVar_Grad_j, nVar, nDim);
   AD::SetPreaccIn(Thermal_Diffusivity_i); AD::SetPreaccIn(Thermal_Conductivity_j);
+  AD::SetPreaccIn(Maxwell_Permittivity_i); AD::SetPreaccIn(Maxwell_Permittivity_j);
+  AD::SetPreaccIn(Maxwell_Peameability_i); AD::SetPreaccIn(Maxwell_Peameability_j);
 
-  Thermal_Diffusivity_Mean = 0.5*(Thermal_Diffusivity_i + Thermal_Diffusivity_j);
-
-  su2double* Temp_Six_Vector_i = new su2double [MAXW_EM_DIM]();
-  su2double* Temp_Six_Vector_j = new su2double [MAXW_EM_DIM]();
-
-
-  su2double eps_i, eps_j, mu_i,  mu_j;// permittivity, permeability
-  su2double *n = Normal;
-  Compute_Aofn(eps_i, mu_i, n, BOOL_POSITIVE, Aofn_i);
-  Compute_Aofn(eps_j, mu_j, n, BOOL_NEGATIVE, Aofn_j);
-  su2double Y_i = sqrt(eps_i/mu_i), Z_i =1/Y_i;
-  su2double Y_j = sqrt(eps_j/mu_j), Z_j =1/Y_j;
 
   /*--- Compute vector going from iPoint to jPoint ---*/
-  dist_ij_2 = 0; proj_vector_ij = 0; area_face = 0.0; 
+  // dist_ij_2 = 0; proj_vector_ij = 0; 
+  area_face = 0.0; 
   for (iDim = 0; iDim < nDim; iDim++) {
     area_face += Normal[iDim]*Normal[iDim];
-    Edge_Vector[iDim] = Coord_j[iDim]-Coord_i[iDim];
-    dist_ij_2 += Edge_Vector[iDim]*Edge_Vector[iDim];
-    proj_vector_ij += Edge_Vector[iDim]*Normal[iDim];
+    // Edge_Vector[iDim] = Coord_j[iDim]-Coord_i[iDim];
+    // dist_ij_2 += Edge_Vector[iDim]*Edge_Vector[iDim];
+    // proj_vector_ij += Edge_Vector[iDim]*Normal[iDim];
   };
-  if (dist_ij_2 == 0.0) {proj_vector_ij = 0.0;}
-  else proj_vector_ij = proj_vector_ij/dist_ij_2;
+  // if (dist_ij_2 == 0.0) {proj_vector_ij = 0.0;}
+  // else proj_vector_ij = proj_vector_ij/dist_ij_2;
   if (area_face != 0) area_face = sqrt(area_face); 
+
+  Compute_Aofn(Maxwell_Permittivity_i, Maxwell_Peameability_i, UnitNormal, BOOL_POSITIVE, Aofn_i);
+  Compute_Aofn(Maxwell_Permittivity_j, Maxwell_Peameability_j, UnitNormal, BOOL_NEGATIVE, Aofn_j);
+  su2double Y_i = sqrt(Maxwell_Permittivity_i/Maxwell_Peameability_i), Z_i =1/Y_i;
+  su2double Y_j = sqrt(Maxwell_Permittivity_j/Maxwell_Peameability_j), Z_j =1/Y_j;
+
 
   /*--- Compute A*U matrix-vector product ---*/
   for (iVar = 0; iVar < MAXW_EM_DIM; iVar++) 
+  {
     for (jVar = 0; jVar < MAXW_EM_DIM; iVar++) 
     {
       Temp_Six_Vector_i[iVar] += Aofn_i[iVar][jVar] * Maxwell_U_i[jVar];
       Temp_Six_Vector_j[iVar] += Aofn_j[iVar][jVar] * Maxwell_U_j[jVar];
     }
-
+  }
 
   /*!
    * For Residual and Jacobians -> Use flux-splitting method to compute them.
@@ -161,8 +165,6 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
       Jacobian_j[iVar][jVar] = Aofn_j[iVar][jVar] * area_face;
     }
   }
-
-
 
   AD::SetPreaccOut(val_residual, nVar);
   AD::EndPreacc();

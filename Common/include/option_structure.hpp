@@ -117,7 +117,7 @@ const unsigned int MAX_NUMBER_PERIODIC = 10; /*!< \brief Maximum number of perio
 const unsigned int MAX_STRING_SIZE = 200;    /*!< \brief Maximum number of domains. */
 const unsigned int MAX_NUMBER_FFD = 15;	     /*!< \brief Maximum number of FFDBoxes for the FFD. */
 const unsigned int MAX_SOLS = 8;		         /*!< \brief Maximum number of solutions at the same time (dimension of solution container array). */
-const unsigned int MAX_TERMS = 8;		         /*!< \brief Maximum number of terms in the numerical equations (dimension of solver container array). */
+const unsigned int MAX_TERMS = 6;		         /*!< \brief Maximum number of terms in the numerical equations (dimension of solver container array). */
 const unsigned int MAX_TERMS_FEA = 10;       /*!< \brief Maximum number of terms in the numerical equations (dimension of solver container array). */
 const unsigned int MAX_ZONES = 3;            /*!< \brief Maximum number of zones. */
 const unsigned int MAX_FE_KINDS = 4;            	/*!< \brief Maximum number of Finite Elements. */
@@ -470,8 +470,6 @@ const int SOURCE_FIRST_TERM = 2;        /*!< \brief Position of the first source
 const int SOURCE_SECOND_TERM = 3;   /*!< \brief Position of the second source term in the numerics container array. */
 const int CONV_BOUND_TERM = 4;       /*!< \brief Position of the convective boundary terms in the numerics container array. */
 const int VISC_BOUND_TERM = 5;       /*!< \brief Position of the viscous boundary terms in the numerics container array. */
-const int CURL_TERM = 6;             /*!< \brief Position of the curl terms in the numerics container array. */
-const int CURL_BOUND_TERM = 7;       /*!< \brief Position of the curl boundary terms in the numerics container array. */
 
 const int FEA_TERM = 0;			/*!< \brief Position of the finite element analysis terms in the numerics container array. */
 const int DE_TERM = 1;			/*!< \brief Position of the dielectric terms in the numerics container array. */
