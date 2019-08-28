@@ -4135,7 +4135,7 @@ public:
  */
 class CSourceFluxSplitCorrected_Maxwell : public CNumerics {
 private:
-  su2double **Mean_GradHeatVar;S
+  su2double **Mean_GradHeatVar;
   su2double *Proj_Mean_GradHeatVar_Kappa, *Proj_Mean_GradHeatVar_Edge, *Proj_Mean_GradHeatVar_Corrected;
   su2double *Edge_Vector;
   bool implicit;
