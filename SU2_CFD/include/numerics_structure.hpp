@@ -4097,9 +4097,10 @@ private:
   su2double **Mean_GradHeatVar;
   su2double *Proj_Mean_GradHeatVar_Normal, *Proj_Mean_GradHeatVar_Corrected;
   su2double *Edge_Vector;
+  su2double **Aofn_i, **Aofn_j;
   bool implicit;
-  su2double dist_ij_2, proj_vector_ij, Thermal_Diffusivity_Mean;
-  unsigned short iVar, iDim;
+  su2double dist_ij_2, proj_vector_ij, area_face, Thermal_Diffusivity_Mean;
+  unsigned short iVar, jVar, iDim;
 
 public:
 

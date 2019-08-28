@@ -38,14 +38,25 @@
 #include "../include/numerics_structure.hpp"
 #include <limits>
 
-su2double** Compute_Aofn(su2double& eps, su2double& mu, bool& positive)
+const unsigned short MAXW_EM_DIM = 6;
+const bool BOOL_POSITIVE = true;
+const bool BOOL_NEGATIVE = false;
+
+/*!
+  * \brief Compute the Aofn, short for $\tilde{A}(n)^{+}$ or $\tilde{A}(n)^{-}$. 
+  * The dimension is 6 because Maxwell curl operator only works in 3D. One may improve it to be compatible with both simplified 2D and 3D. 
+  * \param[in] eps - Electric permittivity of the material. 
+  * \param[in] mu - Magnetic peameability of the material. 
+  * \param[in] n - The unit direction vector of the cell face.
+  * \param[in] is_positive - Whether the user wants a $\tilde{A}(n)^{+}$ or $\tilde{A}(n)^{-}$.
+  * \param[out] Aofn - Pointer to the result.
+*/
+void Compute_Aofn(su2double& eps, su2double& mu, su2double*& n, bool is_positive, su2double** Aofn)
 {
-  su2double** Aofn = new su2double* [6];
-  for (unsigned short i = 0; i < 6; i++) Aofn[i] = new su2double [6]();
   
   su2double v = 1/sqrt(eps*mu);
 
-  if (positive)
+  if (is_positive)
   {
     Aofn[0][0]=(pow(n[2],2)+pow(n[1],2))*v; Aofn[0][1]=-n[0]*n[1]*v;                Aofn[0][2]=-n[0]*n[2]*v;                Aofn[0][3]=0;                           Aofn[0][4]=n[2]/eps;                    Aofn[0][5]=-n[1]/eps;
     Aofn[1][0]=-n[0]*n[1]*v ;               Aofn[1][1]=(pow(n[0],2)+pow(n[2],2))*v; Aofn[1][2]=-n[1]*n[2]*v ;               Aofn[1][3]=-n[2]/eps ;                  Aofn[1][4]=0;                           Aofn[1][5]=n[0]/eps;
@@ -63,37 +74,29 @@ su2double** Compute_Aofn(su2double& eps, su2double& mu, bool& positive)
     Aofn[4][0]=n[2]/mu ;                    Aofn[4][1]=0 ;                          Aofn[4][2]=-n[0]/mu;                    Aofn[4][3]=n[0]*n[1]*v;                Aofn[4][4]=-(pow(n[0],2)+pow(n[2],2))*v; Aofn[4][5]=n[1]*n[2]*v;
     Aofn[5][0]=-n[1]/mu ;                   Aofn[5][1]=n[0]/mu ;                    Aofn[5][2]=0;                           Aofn[5][3]=n[0]*n[2]*v;                Aofn[5][4]=n[1]*n[2]*v;                  Aofn[5][5]=-(pow(n[0],2)+pow(n[1],2))*v;
   }
-  return Aofn;
 }
 
 
-const unsigned short MAXW_EM_DIM = 6;
 CSourceFluxSplit_Maxwell::CSourceFluxSplit_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
-  implicit        = (config->GetKind_TimeIntScheme_Heat() == EULER_IMPLICIT); //TODO, Heat module characters
+  // implicit        = (config->GetKind_TimeIntScheme_Heat() == EULER_IMPLICIT); //TODO, To replace the Heat module characters
+  // implicit        = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT); //TODO, To imitate Heat module characters
 
   Edge_Vector = new su2double [nDim];
-  Proj_Mean_GradHeatVar_Normal = new su2double [nVar]; //TODO, Heat module characters
-  Proj_Mean_GradHeatVar_Corrected = new su2double [nVar]; //TODO, Heat module characters
-  Mean_GradHeatVar = new su2double* [nVar]; //TODO, Heat module characters
-  for (iVar = 0; iVar < nVar; iVar++)
-    Mean_GradHeatVar[iVar] = new su2double [nDim]; //TODO, Heat module characters
 
-  Aofn_i = new su2double* [MAXW_EM_DIM]; // Aofn_i, short for \tilde{A}(n)^{+}, The dimension is 6 because Maxwell curl operator only works in 3D
-  for (iVar = 0; iVar < MAXW_EM_DIM; iVar++)
-    Aofn_i[iVar] = new su2double [MAXW_EM_DIM]; 
-  
-
+  // Aofn_i, short for $\tilde{A}(n)^{+}$ or $\tilde{A}(n)^{-}$. 
+  su2double** Aofn_i = new su2double* [MAXW_EM_DIM];
+  su2double** Aofn_j = new su2double* [MAXW_EM_DIM];
+  for (unsigned short iVar = 0; iVar < MAXW_EM_DIM; iVar++) 
+  {
+    Aofn_i[iVar] = new su2double [MAXW_EM_DIM]();
+    Aofn_j[iVar] = new su2double [MAXW_EM_DIM]();
+  }
 }
 
 CSourceFluxSplit_Maxwell::~CSourceFluxSplit_Maxwell(void) {
 
   delete [] Edge_Vector;
-  delete [] Proj_Mean_GradHeatVar_Normal; //TODO, Heat module characters
-  delete [] Proj_Mean_GradHeatVar_Corrected; //TODO, Heat module characters
-  for (iVar = 0; iVar < nVar; iVar++)
-    delete [] Mean_GradHeatVar[iVar]; //TODO, Heat module characters
-  delete [] Mean_GradHeatVar; //TODO, Heat module characters
   for (iVar = 0; iVar < MAXW_EM_DIM; iVar++)
     delete [] Aofn_i[iVar]; 
   delete [] Aofn_i; 
@@ -106,57 +109,49 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
   AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
   AD::SetPreaccIn(Normal, nDim);
   AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
-  AD::SetPreaccIn(EM_U_i); AD::SetPreaccIn(EM_U_j);
-  AD::SetPreaccIn(ConsVar_Grad_i[0],nDim); AD::SetPreaccIn(ConsVar_Grad_j[0],nDim);
+  AD::SetPreaccIn(Maxwell_U_i, nVar); AD::SetPreaccIn(Maxwell_U_j, nVar);
+  AD::SetPreaccIn(ConsVar_Grad_i, nVar, nDim); AD::SetPreaccIn(ConsVar_Grad_j, nVar, nDim);
   AD::SetPreaccIn(Thermal_Diffusivity_i); AD::SetPreaccIn(Thermal_Conductivity_j);
 
   Thermal_Diffusivity_Mean = 0.5*(Thermal_Diffusivity_i + Thermal_Diffusivity_j);
 
   
 
-  su2double eps_i, eps_j;// permittivity
-  su2double mu_i,  mu_j;// permeability
+  su2double* Temp_Six_Vector_i = new su2double [MAXW_EM_DIM]();
+  su2double* Temp_Six_Vector_j = new su2double [MAXW_EM_DIM]();
 
-  Aofn_i = Compute_Aofn(eps, mu, true);
-  Aofn_j = Compute_Aofn(eps, mu, false);
-  Y_i = sqrt(eps_i/mu_i); Z_i =1/Y_i;
-  Y_j = sqrt(eps_j/mu_j); Z_j =1/Y_j;
+
+  su2double eps_i, eps_j, mu_i,  mu_j;// permittivity, permeability
+  su2double *n = Normal;
+  Compute_Aofn(eps_i, mu_i, n, BOOL_POSITIVE, Aofn_i);
+  Compute_Aofn(eps_j, mu_j, n, BOOL_NEGATIVE, Aofn_j);
+  su2double Y_i = sqrt(eps_i/mu_i), Z_i =1/Y_i;
+  su2double Y_j = sqrt(eps_j/mu_j), Z_j =1/Y_j;
 
   /*--- Compute vector going from iPoint to jPoint ---*/
-  dist_ij_2 = 0; proj_vector_ij = 0;
+  dist_ij_2 = 0; proj_vector_ij = 0; area_face = 0.0; 
   for (iDim = 0; iDim < nDim; iDim++) {
+    area_face += Normal[iDim]*Normal[iDim];
     Edge_Vector[iDim] = Coord_j[iDim]-Coord_i[iDim];
     dist_ij_2 += Edge_Vector[iDim]*Edge_Vector[iDim];
     proj_vector_ij += Edge_Vector[iDim]*Normal[iDim];
   };
   if (dist_ij_2 == 0.0) {proj_vector_ij = 0.0;}
   else proj_vector_ij = proj_vector_ij/dist_ij_2;
+  if (area_face != 0) = sqrt(area_face); 
 
-  /*--- Mean gradient approximation. Projection of the mean gradient in the direction of the edge ---*/
-  for (iVar = 0; iVar < nVar; iVar++) {
-    Proj_Mean_GradHeatVar_Normal[iVar] = 0.0; 
-    Proj_Mean_GradHeatVar_Corrected[iVar] = 0.0; 
-    for (iDim = 0; iDim < nDim; iDim++) {
-      Mean_GradHeatVar[iVar][iDim] = 0.5*(ConsVar_Grad_i[iVar][iDim] + ConsVar_Grad_j[iVar][iDim]); 
-      Proj_Mean_GradHeatVar_Normal[iVar] += Mean_GradHeatVar[iVar][iDim]*Normal[iDim]; 
-    }
-    Proj_Mean_GradHeatVar_Corrected[iVar] = Proj_Mean_GradHeatVar_Normal[iVar];
-  }
-
-  su2double* Temp_Six_Vector_i = new su2double [nVar]();
-  su2double* Temp_Six_Vector_j = new su2double [nVar]();
-  for (unsigned short iVar = 0; iVar < nVar; iVar++) 
-    for (unsigned short jVar = 0; jVar < nVar; iVar++) 
+  /*--- Compute A*U matrix-vector product ---*/
+  for (iVar = 0; iVar < MAXW_EM_DIM; iVar++) 
+    for (jVar = 0; jVar < MAXW_EM_DIM; iVar++) 
     {
-      Temp_Six_Vector_i[iVar] += Aofn_i[iVar][jVar]*ConsVar[jVar];
-      Temp_Six_Vector_j[iVar] += Aofn_j[iVar][jVar]*ConsVar[jVar];
+      Temp_Six_Vector_i[iVar] += Aofn_i[iVar][jVar] * Maxwell_U_i[jVar];
+      Temp_Six_Vector_j[iVar] += Aofn_j[iVar][jVar] * Maxwell_U_j[jVar];
     }
-    
 
 
-
-  val_residual[0] = Thermal_Diffusivity_Mean*Proj_Mean_GradHeatVar_Corrected[0]; 
-
+  for (iVar = 0; iVar < MAXW_EM_DIM; iVar++) 
+    val_residual[iVar] = *(Temp_Six_Vector_i[iVar]+Temp_Six_Vector_j[iVar]);
+  
 
   /*--- For Jacobians -> Use of TSL approx. to compute derivatives of the gradients ---*/
   // TODO: Maxwell equation evolution have not yet implemented the flux contribution to Jacobian
