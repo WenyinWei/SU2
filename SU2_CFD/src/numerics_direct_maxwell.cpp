@@ -165,7 +165,6 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
 
 
   AD::SetPreaccOut(val_residual, nVar);
-  AD::SetPreaccOut(Jacobian_i, nVar, nVar); AD::SetPreaccOut(Jacobian_j, nVar, nVar); 
   AD::EndPreacc();
 
 }
