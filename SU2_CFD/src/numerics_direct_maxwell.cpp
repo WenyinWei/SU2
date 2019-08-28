@@ -112,12 +112,8 @@ CSourceFluxSplit_Maxwell::~CSourceFluxSplit_Maxwell(void) {
 void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
 
   AD::StartPreacc();
-  AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
   AD::SetPreaccIn(Normal, nDim); AD::SetPreaccIn(UnitNormal, nDim);
-  AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
   AD::SetPreaccIn(Maxwell_U_i, nVar); AD::SetPreaccIn(Maxwell_U_j, nVar);
-  AD::SetPreaccIn(ConsVar_Grad_i, nVar, nDim); AD::SetPreaccIn(ConsVar_Grad_j, nVar, nDim);
-  AD::SetPreaccIn(Thermal_Diffusivity_i); AD::SetPreaccIn(Thermal_Conductivity_j);
   AD::SetPreaccIn(Maxwell_Permittivity_i); AD::SetPreaccIn(Maxwell_Permittivity_j);
   AD::SetPreaccIn(Maxwell_Peameability_i); AD::SetPreaccIn(Maxwell_Peameability_j);
 
@@ -142,9 +138,9 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
 
 
   /*--- Compute A*U matrix-vector product ---*/
-  for (iVar = 0; iVar < MAXW_EM_DIM; iVar++) 
+  for (iVar = 0; iVar < nVar; iVar++) 
   {
-    for (jVar = 0; jVar < MAXW_EM_DIM; iVar++) 
+    for (jVar = 0; jVar < nVar; iVar++) 
     {
       Temp_Six_Vector_i[iVar] += Aofn_i[iVar][jVar] * Maxwell_U_i[jVar];
       Temp_Six_Vector_j[iVar] += Aofn_j[iVar][jVar] * Maxwell_U_j[jVar];
@@ -172,83 +168,83 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
 }
 
 
-CSourceFluxSplitCorrected_Maxwell::CSourceFluxSplitCorrected_Maxwell(unsigned short val_nDim, unsigned short val_nVar,
-                                                   CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
+// CSourceFluxSplitCorrected_Maxwell::CSourceFluxSplitCorrected_Maxwell(unsigned short val_nDim, unsigned short val_nVar,
+//                                                    CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
-  implicit        = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT); //TODO, Check the config function is modified correctly
-  // TODO, Heat module characters, many heat variables
-  Edge_Vector = new su2double [nDim];
-  Proj_Mean_GradHeatVar_Edge = new su2double [nVar];
-  Proj_Mean_GradHeatVar_Kappa = new su2double [nVar];
-  Proj_Mean_GradHeatVar_Corrected = new su2double [nVar];
-  Mean_GradHeatVar = new su2double* [nVar];
-  for (iVar = 0; iVar < nVar; iVar++)
-    Mean_GradHeatVar[iVar] = new su2double [nDim];
+//   implicit        = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT); //TODO, Check the config function is modified correctly
+//   // TODO, Heat module characters, many heat variables
+//   Edge_Vector = new su2double [nDim];
+//   Proj_Mean_GradHeatVar_Edge = new su2double [nVar];
+//   Proj_Mean_GradHeatVar_Kappa = new su2double [nVar];
+//   Proj_Mean_GradHeatVar_Corrected = new su2double [nVar];
+//   Mean_GradHeatVar = new su2double* [nVar];
+//   for (iVar = 0; iVar < nVar; iVar++)
+//     Mean_GradHeatVar[iVar] = new su2double [nDim];
 
-}
+// }
 
-CSourceFluxSplitCorrected_Maxwell::~CSourceFluxSplitCorrected_Maxwell(void) {
+// CSourceFluxSplitCorrected_Maxwell::~CSourceFluxSplitCorrected_Maxwell(void) {
 
-  delete [] Edge_Vector;
-  delete [] Proj_Mean_GradHeatVar_Edge;
-  delete [] Proj_Mean_GradHeatVar_Kappa;
-  delete [] Proj_Mean_GradHeatVar_Corrected;
-  for (iVar = 0; iVar < nVar; iVar++)
-    delete [] Mean_GradHeatVar[iVar];
-  delete [] Mean_GradHeatVar;
+//   delete [] Edge_Vector;
+//   delete [] Proj_Mean_GradHeatVar_Edge;
+//   delete [] Proj_Mean_GradHeatVar_Kappa;
+//   delete [] Proj_Mean_GradHeatVar_Corrected;
+//   for (iVar = 0; iVar < nVar; iVar++)
+//     delete [] Mean_GradHeatVar[iVar];
+//   delete [] Mean_GradHeatVar;
 
-}
+// }
 
-void CSourceFluxSplitCorrected_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
+// void CSourceFluxSplitCorrected_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
 
-  // TODO: No idea how to set an appropriate preprocess of adaptive mesh for Maxwell
-  AD::StartPreacc();
-  AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
-  AD::SetPreaccIn(Normal, nDim);
-  AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
-  AD::SetPreaccIn(Maxwell_U_i, nVar); AD::SetPreaccIn(Maxwell_U_j, nVar);
-  AD::SetPreaccIn(ConsVar_Grad_i, nVar, nDim); AD::SetPreaccIn(ConsVar_Grad_j, nVar, nDim);
-  AD::SetPreaccIn(Thermal_Diffusivity_i); AD::SetPreaccIn(Thermal_Conductivity_j);
+//   // TODO: No idea how to set an appropriate preprocess of adaptive mesh for Maxwell
+//   AD::StartPreacc();
+//   AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
+//   AD::SetPreaccIn(Normal, nDim);
+//   AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
+//   AD::SetPreaccIn(Maxwell_U_i, nVar); AD::SetPreaccIn(Maxwell_U_j, nVar);
+//   AD::SetPreaccIn(ConsVar_Grad_i, nVar, nDim); AD::SetPreaccIn(ConsVar_Grad_j, nVar, nDim);
+//   AD::SetPreaccIn(Thermal_Diffusivity_i); AD::SetPreaccIn(Thermal_Conductivity_j);
 
-  Thermal_Diffusivity_Mean = 0.5*(Thermal_Diffusivity_i + Thermal_Diffusivity_j);
+//   Thermal_Diffusivity_Mean = 0.5*(Thermal_Diffusivity_i + Thermal_Diffusivity_j);
 
-  /*--- Compute vector going from iPoint to jPoint ---*/
+//   /*--- Compute vector going from iPoint to jPoint ---*/
 
-  dist_ij_2 = 0; proj_vector_ij = 0;
-  for (iDim = 0; iDim < nDim; iDim++) {
-    Edge_Vector[iDim] = Coord_j[iDim]-Coord_i[iDim];
-    dist_ij_2 += Edge_Vector[iDim]*Edge_Vector[iDim];
-    proj_vector_ij += Edge_Vector[iDim]*Normal[iDim];
-  }
-  if (dist_ij_2 == 0.0) proj_vector_ij = 0.0;
-  else proj_vector_ij = proj_vector_ij/dist_ij_2;
+//   dist_ij_2 = 0; proj_vector_ij = 0;
+//   for (iDim = 0; iDim < nDim; iDim++) {
+//     Edge_Vector[iDim] = Coord_j[iDim]-Coord_i[iDim];
+//     dist_ij_2 += Edge_Vector[iDim]*Edge_Vector[iDim];
+//     proj_vector_ij += Edge_Vector[iDim]*Normal[iDim];
+//   }
+//   if (dist_ij_2 == 0.0) proj_vector_ij = 0.0;
+//   else proj_vector_ij = proj_vector_ij/dist_ij_2;
 
-  /*--- Mean gradient approximation. Projection of the mean gradient
-   in the direction of the edge ---*/
-  // TODO, Heat module characters
-  for (iVar = 0; iVar < nVar; iVar++) {
-    Proj_Mean_GradHeatVar_Edge[iVar] = 0.0;
-    Proj_Mean_GradHeatVar_Kappa[iVar] = 0.0;
+//   /*--- Mean gradient approximation. Projection of the mean gradient
+//    in the direction of the edge ---*/
+//   // TODO, Heat module characters
+//   for (iVar = 0; iVar < nVar; iVar++) {
+//     Proj_Mean_GradHeatVar_Edge[iVar] = 0.0;
+//     Proj_Mean_GradHeatVar_Kappa[iVar] = 0.0;
 
-    for (iDim = 0; iDim < nDim; iDim++) {
-      Mean_GradHeatVar[iVar][iDim] = 0.5*(ConsVar_Grad_i[iVar][iDim] + ConsVar_Grad_j[iVar][iDim]);
-      Proj_Mean_GradHeatVar_Kappa[iVar] += Mean_GradHeatVar[iVar][iDim]*Normal[iDim];
-      Proj_Mean_GradHeatVar_Edge[iVar] += Mean_GradHeatVar[iVar][iDim]*Edge_Vector[iDim];
-    }
-    Proj_Mean_GradHeatVar_Corrected[iVar] = Proj_Mean_GradHeatVar_Kappa[iVar];
-    Proj_Mean_GradHeatVar_Corrected[iVar] -= Proj_Mean_GradHeatVar_Edge[iVar]*proj_vector_ij -
-    (Temp_j-Temp_i)*proj_vector_ij;
-  }
+//     for (iDim = 0; iDim < nDim; iDim++) {
+//       Mean_GradHeatVar[iVar][iDim] = 0.5*(ConsVar_Grad_i[iVar][iDim] + ConsVar_Grad_j[iVar][iDim]);
+//       Proj_Mean_GradHeatVar_Kappa[iVar] += Mean_GradHeatVar[iVar][iDim]*Normal[iDim];
+//       Proj_Mean_GradHeatVar_Edge[iVar] += Mean_GradHeatVar[iVar][iDim]*Edge_Vector[iDim];
+//     }
+//     Proj_Mean_GradHeatVar_Corrected[iVar] = Proj_Mean_GradHeatVar_Kappa[iVar];
+//     Proj_Mean_GradHeatVar_Corrected[iVar] -= Proj_Mean_GradHeatVar_Edge[iVar]*proj_vector_ij -
+//     (Temp_j-Temp_i)*proj_vector_ij;
+//   }
 
-  val_residual[0] = Thermal_Diffusivity_Mean*Proj_Mean_GradHeatVar_Corrected[0];
+//   val_residual[0] = Thermal_Diffusivity_Mean*Proj_Mean_GradHeatVar_Corrected[0];
 
-  /*--- For Jacobians -> Use of TSL approx. to compute derivatives of the gradients ---*/
+//   /*--- For Jacobians -> Use of TSL approx. to compute derivatives of the gradients ---*/
 
-  if (implicit) {
-    Jacobian_i[0][0] = -Thermal_Diffusivity_Mean*proj_vector_ij;
-    Jacobian_j[0][0] = Thermal_Diffusivity_Mean*proj_vector_ij;
-  }
+//   if (implicit) {
+//     Jacobian_i[0][0] = -Thermal_Diffusivity_Mean*proj_vector_ij;
+//     Jacobian_j[0][0] = Thermal_Diffusivity_Mean*proj_vector_ij;
+//   }
 
-  AD::SetPreaccOut(val_residual, nVar);
-  AD::EndPreacc();
-}
+//   AD::SetPreaccOut(val_residual, nVar);
+//   AD::EndPreacc();
+// }
