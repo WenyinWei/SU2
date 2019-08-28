@@ -71,9 +71,9 @@ void Compute_Aofn(su2double& eps, su2double& mu, su2double*& n, bool is_positive
     Aofn[0][0]=-(pow(n[2],2)+pow(n[1],2))*v;Aofn[0][1]=n[0]*n[1]*v;                 Aofn[0][2]=n[0]*n[2]*v;                 Aofn[0][3]=0;                           Aofn[0][4]=n[2]/eps;                    Aofn[0][5]=-n[1]/eps;
     Aofn[1][0]=n[0]*n[1]*v ;                Aofn[1][1]=-(pow(n[0],2)+pow(n[2],2))*v;Aofn[1][2]=n[1]*n[2]*v ;                Aofn[1][3]=-n[2]/eps ;                  Aofn[1][4]=0;                           Aofn[1][5]=n[0]/eps;
     Aofn[2][0]=n[0]*n[2]*v ;                Aofn[2][1]=n[1]*n[2]*v ;                Aofn[2][2]=-(pow(n[0],2)+pow(n[1],2))*v;Aofn[2][3]=n[1]/eps ;                   Aofn[2][4]=-n[0]/eps;                   Aofn[2][5]=0;
-    Aofn[3][0]=0 ;                          Aofn[3][1]=-n[2]/mu ;                   Aofn[3][2]=n[1]/mu;                     Aofn[3][3]=-(pow(n[2],2)+pow(n[1],2))*v; Aofn[3][4]=n[0]*n[1]*v;                Aofn[3][5]=n[0]*n[2]*v;
-    Aofn[4][0]=n[2]/mu ;                    Aofn[4][1]=0 ;                          Aofn[4][2]=-n[0]/mu;                    Aofn[4][3]=n[0]*n[1]*v;                Aofn[4][4]=-(pow(n[0],2)+pow(n[2],2))*v; Aofn[4][5]=n[1]*n[2]*v;
-    Aofn[5][0]=-n[1]/mu ;                   Aofn[5][1]=n[0]/mu ;                    Aofn[5][2]=0;                           Aofn[5][3]=n[0]*n[2]*v;                Aofn[5][4]=n[1]*n[2]*v;                  Aofn[5][5]=-(pow(n[0],2)+pow(n[1],2))*v;
+    Aofn[3][0]=0 ;                          Aofn[3][1]=-n[2]/mu ;                   Aofn[3][2]=n[1]/mu;                     Aofn[3][3]=-(pow(n[2],2)+pow(n[1],2))*v;Aofn[3][4]=n[0]*n[1]*v;                 Aofn[3][5]=n[0]*n[2]*v;
+    Aofn[4][0]=n[2]/mu ;                    Aofn[4][1]=0 ;                          Aofn[4][2]=-n[0]/mu;                    Aofn[4][3]=n[0]*n[1]*v;                 Aofn[4][4]=-(pow(n[0],2)+pow(n[2],2))*v;Aofn[4][5]=n[1]*n[2]*v;
+    Aofn[5][0]=-n[1]/mu ;                   Aofn[5][1]=n[0]/mu ;                    Aofn[5][2]=0;                           Aofn[5][3]=n[0]*n[2]*v;                 Aofn[5][4]=n[1]*n[2]*v;                 Aofn[5][5]=-(pow(n[0],2)+pow(n[1],2))*v;
   }
 }
 
