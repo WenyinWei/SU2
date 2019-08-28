@@ -147,7 +147,7 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
 
 
   for (iVar = 0; iVar < MAXW_EM_DIM; iVar++) 
-    val_residual[iVar] = *(Temp_Six_Vector_i[iVar]+Temp_Six_Vector_j[iVar]);
+    val_residual[iVar] = area_face*(Temp_Six_Vector_i[iVar]+Temp_Six_Vector_j[iVar]);
   
 
   /*--- For Jacobians -> Use of TSL approx. to compute derivatives of the gradients ---*/
@@ -193,12 +193,13 @@ CSourceFluxSplitCorrected_Maxwell::~CSourceFluxSplitCorrected_Maxwell(void) {
 void CSourceFluxSplitCorrected_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
 
   // TODO: No idea how to set an appropriate preprocess of adaptive mesh for Maxwell
-  // AD::StartPreacc();
-  // AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
-  // AD::SetPreaccIn(Normal, nDim);
-  // AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
-  // AD::SetPreaccIn(ConsVar_Grad_i[0],nDim); AD::SetPreaccIn(ConsVar_Grad_j[0],nDim);
-  // AD::SetPreaccIn(Thermal_Diffusivity_i); AD::SetPreaccIn(Thermal_Diffusivity_j);
+  AD::StartPreacc();
+  AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
+  AD::SetPreaccIn(Normal, nDim);
+  AD::SetPreaccIn(Temp_i); AD::SetPreaccIn(Temp_j);
+  AD::SetPreaccIn(Maxwell_U_i, nVar); AD::SetPreaccIn(Maxwell_U_j, nVar);
+  AD::SetPreaccIn(ConsVar_Grad_i, nVar, nDim); AD::SetPreaccIn(ConsVar_Grad_j, nVar, nDim);
+  AD::SetPreaccIn(Thermal_Diffusivity_i); AD::SetPreaccIn(Thermal_Conductivity_j);
 
   Thermal_Diffusivity_Mean = 0.5*(Thermal_Diffusivity_i + Thermal_Diffusivity_j);
 

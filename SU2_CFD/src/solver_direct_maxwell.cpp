@@ -502,6 +502,9 @@ void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
 
   su2double laminar_viscosity, Prandtl_Lam, Prandtl_Turb, eddy_viscosity_i, eddy_viscosity_j,
       thermal_diffusivity_i, thermal_diffusivity_j, Temp_i, Temp_j, **Temp_i_Grad, **Temp_j_Grad;
+  su2double maxwell_permittivity_i, maxwell_permittivity_j, maxwell_peameability_i, maxwell_peameability_j;
+  su2double* Maxwell_U_i, Maxwell_U_j;
+
   unsigned long iEdge, iPoint, jPoint;
 
   bool flow = ((config->GetKind_Solver() == NAVIER_STOKES)
@@ -535,24 +538,36 @@ void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
     /*--- Primitive variables w/o reconstruction ---*/
     Temp_i = node[iPoint]->GetSolution(0);
     Temp_j = node[jPoint]->GetSolution(0);
-    numerics->SetTemperature(Temp_i, Temp_j);
+    numerics->SetTemperature(Temp_i, Temp_j); 
+    // TODO: 1. Check that the GetSolution function really gets all the variables
+    // TODO: 2. Do the new function SetMaxwellStateVariable
+    Maxwell_U_i = node[iPoint]->GetSolution();
+    Maxwell_U_j = node[jPoint]->GetSolution();
+    numerics->SetMaxwellStateVariable(Maxwell_U_i, Maxwell_U_j);
 
     /*--- Eddy viscosity to compute thermal conductivity ---*/
     if (flow) {
-      if (turb) {
-        eddy_viscosity_i = solver_container[TURB_SOL]->node[iPoint]->GetmuT();
-        eddy_viscosity_j = solver_container[TURB_SOL]->node[jPoint]->GetmuT();
-      }
       thermal_diffusivity_i = (laminar_viscosity/Prandtl_Lam) + (eddy_viscosity_i/Prandtl_Turb);
       thermal_diffusivity_j = (laminar_viscosity/Prandtl_Lam) + (eddy_viscosity_j/Prandtl_Turb);
+      // TODO: The fluid maxwell parameters rely on the certant 
+      maxwell_permittivity_i = 1.0;
+      maxwell_permittivity_j = 1.0;
+      maxwell_peameability_i = 1.0;
+      maxwell_peameability_j = 1.0;
     }
     else {
       thermal_diffusivity_i = config->GetThermalDiffusivity_Solid();
       thermal_diffusivity_j = config->GetThermalDiffusivity_Solid();
+      // TODO: To modify the corresponding config function
+      maxwell_permittivity_i = config->GetMaxwellPermittivity_Solid();
+      maxwell_permittivity_j = config->GetMaxwellPermittivity_Solid();
+      maxwell_peameability_i = config->GetMaxwellPeameability_Solid();
+      maxwell_peameability_j = config->GetMaxwellPeameability_Solid();
     }
 
     numerics->SetThermalDiffusivity(thermal_diffusivity_i,thermal_diffusivity_j);
-
+    // TODO: To modify the corresponding config function
+    numerics->SetMaxwellParameters(maxwell_permittivity_i, maxwell_permittivity_j, maxwell_peameability_i, maxwell_peameability_j);
     /*--- Compute residual, and Jacobians ---*/
 
     numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
