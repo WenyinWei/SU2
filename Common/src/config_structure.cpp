@@ -1362,6 +1362,8 @@ void CConfig::SetConfig_Options() {
   /* DESCRIPTION: Time discretization */
   addEnumOption("TIME_DISCRE_HEAT", Kind_TimeIntScheme_Heat, Time_Int_Map, EULER_IMPLICIT);
   /* DESCRIPTION: Time discretization */
+  addEnumOption("TIME_DISCRE_MAXWELL", Kind_TimeIntScheme_Maxwell, Time_Int_Map, EULER_IMPLICIT);
+  /* DESCRIPTION: Time discretization */
   addEnumOption("TIMESTEP_HEAT", Kind_TimeStep_Heat, Heat_TimeStep_Map, MINIMUM);
 
   /*!\par CONFIG_CATEGORY: Linear solver definition \ingroup Config*/
