@@ -94,6 +94,10 @@ public:
   Thermal_Conductivity_ve_j, /*!< \brief Thermal conductivity at point j. */
   Thermal_Diffusivity_i, /*!< \brief Thermal diffusivity at point i. */
   Thermal_Diffusivity_j; /*!< \brief Thermal diffusivity at point j. */
+  su2double Maxwell_Permittivity_i, /*!< \brief Maxwell permittivity at point i. */
+  Maxwell_Permittivity_j,  /*!< \brief Maxwell permittivity at point j. */
+  Maxwell_Peameability_i,  /*!< \brief Maxwell peameability at point i. */
+  Maxwell_Peameability_j;  /*!< \brief Maxwell peameability at point j. */
   su2double Cp_i, /*!< \brief Cp at point i. */
   Cp_j;         /*!< \brief Cp at point j. */
   su2double *Theta_v; /*!< \brief Characteristic vibrational temperature */
