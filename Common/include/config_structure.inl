@@ -369,6 +369,10 @@ inline su2double CConfig::GetThermalDiffusivity(void) { return Thermal_Diffusivi
 
 inline su2double CConfig::GetThermalDiffusivity_Solid(void) { return Thermal_Diffusivity_Solid; }
 
+inline su2double CConfig::GetMaxwellPermittivity_Solid(void) { return Maxwell_Permittivity_Solid; }
+
+inline su2double CConfig::GetMaxwellPeameability_Solid(void) { return Maxwell_Peameability_Solid; }
+
 inline su2double CConfig::GetTemperature_Freestream_Solid(void) { return Temperature_Freestream_Solid;  }
 
 inline su2double CConfig::GetElasticyMod(unsigned short id_val) { return ElasticityMod[id_val]; }

@@ -280,6 +280,16 @@ inline void CNumerics::SetThermalDiffusivity(su2double val_thermal_diffusivity_i
   Thermal_Diffusivity_j = val_thermal_diffusivity_j;
 }
 
+inline void CNumerics::SetMaxwellPermittivity(su2double val_maxwell_permittivity_i,su2double val_maxwell_permittivity_j) {
+  Maxwell_Permittivity_i = val_maxwell_permittivity_i;
+  Maxwell_Permittivity_j = val_maxwell_permittivity_j;
+}
+
+inline void CNumerics::SetMaxwellPeameability(su2double val_maxwell_peameability_i,su2double val_maxwell_peameability_j) {
+  Maxwell_Peameability_i = val_maxwell_peameability_i;
+  Maxwell_Peameability_j = val_maxwell_peameability_j;
+}
+
 inline void CNumerics::SetDiffusionCoeff(su2double* val_diffusioncoeff_i, su2double* val_diffusioncoeff_j) {
   Diffusion_Coeff_i = val_diffusioncoeff_i;
   Diffusion_Coeff_j = val_diffusioncoeff_j;
@@ -457,6 +467,11 @@ inline void CNumerics::SetTurbAdjointGradient(su2double **val_turbpsivar_grad_i,
 inline void CNumerics::SetTemperature(su2double val_temp_i, su2double val_temp_j) {
   Temp_i = val_temp_i;
   Temp_j = val_temp_j;
+}
+
+inline void CNumerics::SetMaxwellStateVariable(su2double *val_maxwell_U_i, su2double *val_maxwell_U_j) {
+  Maxwell_U_i = val_maxwell_U_i;
+  Maxwell_U_j = val_maxwell_U_j;
 }
 
 inline void CNumerics::SetAuxVarGrad(su2double *val_auxvargrad_i, su2double *val_auxvargrad_j) {

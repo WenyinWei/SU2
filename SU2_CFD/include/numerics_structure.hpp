@@ -517,6 +517,23 @@ public:
    */
   void SetThermalDiffusivity(su2double val_thermal_diffusivity_i,
                               su2double val_thermal_diffusivity_j);
+
+  /*!
+   * \brief Set the Maxwell permittivity 
+   * \param[in] val_maxwell_permittivity_i - Value of the electromagnetic permittivity at point i.
+   * \param[in] val_maxwell_permittivity_j - Value of the electromagnetic permittivity at point j.
+   */
+  void SetMaxwellPermittivity(su2double val_maxwell_permittivity_i,
+                              su2double val_maxwell_permittivity_j);
+
+  /*!
+   * \brief Set the Maxwell peameability 
+   * \param[in] val_maxwell_peameability_i - Value of the electromagnetic peameability at point i.
+   * \param[in] val_maxwell_peameability_j - Value of the electromagnetic peameability at point j.
+   */
+  void SetMaxwellPeameability(su2double val_maxwell_peameability_i,
+                              su2double val_maxwell_peameability_j);
+
   /*!
    * \brief Set the eddy viscosity.
    * \param[in] val_eddy_viscosity_i - Value of the eddy viscosity at point i.
@@ -613,6 +630,13 @@ public:
    */
   void SetSoundSpeed(su2double val_soundspeed_i, su2double val_soundspeed_j);
   
+  /*!
+   * \brief Set the value of the $E$ and $H$ electromagnetic field value.
+   * \param[in] val_maxwell_Y_i - Value of the electromagnetic field at point i.
+   * \param[in] val_maxwell_U_j - Value of the electromagnetic field at point j.
+   */
+  void SetMaxwellStateVariable(su2double *val_maxwell_U_i, su2double *val_maxwell_U_j);
+
   /*!
    * \brief Set the value of the temperature.
    * \param[in] val_temp_i - Value of the temperature at point i.

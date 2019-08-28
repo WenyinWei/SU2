@@ -819,6 +819,8 @@ private:
   *KtPolyCoefficientsND,   /*!< \brief Definition of the non-dimensional temperature polynomial coefficients for thermal conductivity. */
   Thermal_Conductivity_Solid, /*!< \brief Thermal conductivity in solids. */
   Thermal_Diffusivity_Solid, /*!< \brief Thermal diffusivity in solids. */
+  Maxwell_Permittivity_Solid, /*!< \brief Thermal diffusivity in solids. */
+  Maxwell_Peameability_Solid, /*!< \brief Thermal diffusivity in solids. */
   Temperature_Freestream_Solid, /*!< \brief Temperature in solids at freestream conditions. */
   Density_Solid,      /*!< \brief Total density in solids. */  
   *Velocity_FreeStream,     /*!< \brief Free-stream velocity vector of the fluid.  */
@@ -1802,6 +1804,18 @@ public:
    * \return Thermal conductivity (solid).
    */
   su2double GetThermalDiffusivity_Solid(void);
+  
+  /*!
+   * \brief Get the value of the electromagnetic parameter permittivity for solids.
+   * \return electromagnetic parameter permittivity (solid).
+   */
+  su2double GetMaxwellPermittivity_Solid(void);
+
+  /*!
+   * \brief Get the value of the electromagnetic parameter peameability for solids.
+   * \return electromagnetic parameter peameability (solid).
+   */
+  su2double GetMaxwellPeameability_Solid(void);
 
   /*!
    * \brief Get the temperature in solids at freestream conditions.
