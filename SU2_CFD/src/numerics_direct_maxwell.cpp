@@ -1,6 +1,6 @@
 /*!
  * \file numerics_direct_maxwell.cpp
- * \brief This file contains all the convective term discretization.
+ * \brief This file contains the Maxwell curl (vorticity) term discretization by utility of flux-splitting method.
  * \author Wenyin Wei 
  * \version 6.2.0 "Falcon"
  *
@@ -38,13 +38,13 @@
 #include "../include/numerics_structure.hpp"
 #include <limits>
 
-su2double** AofnPN(su2double& eps, su2double& mu, bool& positive)
+su2double** Compute_Aofn(su2double& eps, su2double& mu, bool& positive)
 {
   su2double** Aofn = new su2double* [6];
   for (unsigned short i = 0; i < 6; i++) Aofn[i] = new su2double [6]();
   
   su2double v = 1/sqrt(eps*mu);
-  
+
   if (positive)
   {
     Aofn[0][0]=(pow(n[2],2)+pow(n[1],2))*v; Aofn[0][1]=-n[0]*n[1]*v;                Aofn[0][2]=-n[0]*n[2]*v;                Aofn[0][3]=0;                           Aofn[0][4]=n[2]/eps;                    Aofn[0][5]=-n[1]/eps;
@@ -68,7 +68,7 @@ su2double** AofnPN(su2double& eps, su2double& mu, bool& positive)
 
 
 const unsigned short MAXW_EM_DIM = 6;
-CFluxSplit_Maxwell::CFluxSplit_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
+CSourceFluxSplit_Maxwell::CSourceFluxSplit_Maxwell(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
   implicit        = (config->GetKind_TimeIntScheme_Heat() == EULER_IMPLICIT); //TODO, Heat module characters
 
@@ -86,7 +86,7 @@ CFluxSplit_Maxwell::CFluxSplit_Maxwell(unsigned short val_nDim, unsigned short v
 
 }
 
-CFluxSplit_Maxwell::~CFluxSplit_Maxwell(void) {
+CSourceFluxSplit_Maxwell::~CSourceFluxSplit_Maxwell(void) {
 
   delete [] Edge_Vector;
   delete [] Proj_Mean_GradHeatVar_Normal; //TODO, Heat module characters
@@ -100,7 +100,7 @@ CFluxSplit_Maxwell::~CFluxSplit_Maxwell(void) {
 
 }
 
-void CFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
+void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
 
   AD::StartPreacc();
   AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
@@ -117,8 +117,8 @@ void CFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2double **Ja
   su2double eps_i, eps_j;// permittivity
   su2double mu_i,  mu_j;// permeability
 
-  Aofn_i = Aofn(eps, mu, true);
-  Aofn_j = Aofn(eps, mu, false);
+  Aofn_i = Compute_Aofn(eps, mu, true);
+  Aofn_j = Compute_Aofn(eps, mu, false);
   Y_i = sqrt(eps_i/mu_i); Z_i =1/Y_i;
   Y_j = sqrt(eps_j/mu_j); Z_j =1/Y_j;
 
@@ -128,8 +128,8 @@ void CFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2double **Ja
     Edge_Vector[iDim] = Coord_j[iDim]-Coord_i[iDim];
     dist_ij_2 += Edge_Vector[iDim]*Edge_Vector[iDim];
     proj_vector_ij += Edge_Vector[iDim]*Normal[iDim];
-  }
-  if (dist_ij_2 == 0.0) proj_vector_ij = 0.0;
+  };
+  if (dist_ij_2 == 0.0) {proj_vector_ij = 0.0;}
   else proj_vector_ij = proj_vector_ij/dist_ij_2;
 
   /*--- Mean gradient approximation. Projection of the mean gradient in the direction of the edge ---*/
@@ -145,8 +145,8 @@ void CFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2double **Ja
 
   su2double* Temp_Six_Vector_i = new su2double [nVar]();
   su2double* Temp_Six_Vector_j = new su2double [nVar]();
-  for (iVar = 0; iVar < nVar; iVar++) 
-    for (jVar = 0; jVar < nVar; iVar++) 
+  for (unsigned short iVar = 0; iVar < nVar; iVar++) 
+    for (unsigned short jVar = 0; jVar < nVar; iVar++) 
     {
       Temp_Six_Vector_i[iVar] += Aofn_i[iVar][jVar]*ConsVar[jVar];
       Temp_Six_Vector_j[iVar] += Aofn_j[iVar][jVar]*ConsVar[jVar];
@@ -171,7 +171,7 @@ void CFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2double **Ja
 }
 
 
-CAvgGradCorrected_Maxwell::CAvgGradCorrected_Maxwell(unsigned short val_nDim, unsigned short val_nVar,
+CSourceFluxSplitCorrected_Maxwell::CSourceFluxSplitCorrected_Maxwell(unsigned short val_nDim, unsigned short val_nVar,
                                                    CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
   implicit        = (config->GetKind_TimeIntScheme_Heat() == EULER_IMPLICIT); //TODO, Heat module characters
@@ -186,7 +186,7 @@ CAvgGradCorrected_Maxwell::CAvgGradCorrected_Maxwell(unsigned short val_nDim, un
 
 }
 
-CAvgGradCorrected_Maxwell::~CAvgGradCorrected_Maxwell(void) {
+CSourceFluxSplitCorrected_Maxwell::~CSourceFluxSplitCorrected_Maxwell(void) {
 
   delete [] Edge_Vector;
   delete [] Proj_Mean_GradHeatVar_Edge;
@@ -198,7 +198,7 @@ CAvgGradCorrected_Maxwell::~CAvgGradCorrected_Maxwell(void) {
 
 }
 
-void CAvgGradCorrected_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
+void CSourceFluxSplitCorrected_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
 
   // TODO: No idea how to set an appropriate preprocess of adaptive mesh for Maxwell
   // AD::StartPreacc();
