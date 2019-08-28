@@ -574,13 +574,13 @@ void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
 
     /*--- Add and subtract residual, and update Jacobians ---*/
 
-    LinSysRes.SubtractBlock(iPoint, Residual);
-    LinSysRes.AddBlock(jPoint, Residual);
+    LinSysRes.AddBlock(iPoint, Residual);
+    LinSysRes.SubtractBlock(jPoint, Residual);
 
-    Jacobian.SubtractBlock(iPoint, iPoint, Jacobian_i);
-    Jacobian.SubtractBlock(iPoint, jPoint, Jacobian_j);
-    Jacobian.AddBlock(jPoint, iPoint, Jacobian_i);
-    Jacobian.AddBlock(jPoint, jPoint, Jacobian_j);
+    Jacobian.AddBlock(iPoint, iPoint, Jacobian_i);
+    Jacobian.AddBlock(iPoint, jPoint, Jacobian_j);
+    Jacobian.SubtractBlock(jPoint, iPoint, Jacobian_i);
+    Jacobian.SubtractBlock(jPoint, jPoint, Jacobian_j);
   }
 }
 

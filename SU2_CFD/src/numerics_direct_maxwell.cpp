@@ -38,6 +38,7 @@
 #include "../include/numerics_structure.hpp"
 #include <limits>
 
+// TODO: How to use the MAXW_EM_DIM to make it compatiable with both 3D and simplified is indeed a problem. 
 const unsigned short MAXW_EM_DIM = 6;
 const bool BOOL_POSITIVE = true;
 const bool BOOL_NEGATIVE = false;
@@ -146,18 +147,25 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
     }
 
 
-  for (iVar = 0; iVar < MAXW_EM_DIM; iVar++) 
+  /*!
+   * For Residual and Jacobians -> Use flux-splitting method to compute them.
+   * The flux contribution to the Residual is $|S| * [ \tilde{A}(n)^{+} U_{i} + \tilde{A}(n)^{-} U_{j} ]$.
+   * The flux contribution to the Jacobian is $|S|*\tilde{A}(n)^{+}$ and $|S|*\tilde{A}(n)^{-}$ by positive flux and negative flux, respectively.
+   */
+  for (iVar = 0; iVar < nVar; iVar++) 
+  {
     val_residual[iVar] = area_face*(Temp_Six_Vector_i[iVar]+Temp_Six_Vector_j[iVar]);
-  
+    for (jVar = 0; iVar < nVar; iVar++) 
+    {
+      Jacobian_i[iVar][jVar] = Aofn_i[iVar][jVar] * area_face;
+      Jacobian_j[iVar][jVar] = Aofn_j[iVar][jVar] * area_face;
+    }
+  }
 
-  /*--- For Jacobians -> Use of TSL approx. to compute derivatives of the gradients ---*/
-  // TODO: Maxwell equation evolution have not yet implemented the flux contribution to Jacobian
-  // if (implicit) {
-  //   Jacobian_i[0][0] = -Thermal_Diffusivity_Mean*proj_vector_ij;
-  //   Jacobian_j[0][0] = Thermal_Diffusivity_Mean*proj_vector_ij;
-  // }
+
 
   AD::SetPreaccOut(val_residual, nVar);
+  AD::SetPreaccOut(Jacobian_i, nVar, nVar); AD::SetPreaccOut(Jacobian_j, nVar, nVar); 
   AD::EndPreacc();
 
 }

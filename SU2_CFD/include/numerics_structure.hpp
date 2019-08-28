@@ -123,6 +123,8 @@ public:
   dist_j;      /*!< \brief Distance of point j to the nearest wall. */
   su2double Temp_i,  /*!< \brief Temperature at point i. */
   Temp_j;      /*!< \brief Temperature at point j. */
+  su2double *Maxwell_U_i,  /*!< \brief Electromagnetic variables $E$ and $H$ field in one vector at point i. */
+  *Maxwell_U_j;      /*!< \brief Electromagnetic variables $E$ and $H$ field in one vector at point j. */
   su2double *Temp_tr_i, /*!< \brief Temperature transl-rot at point i. */
   *Temp_tr_j;/*!< \brief Temperature transl-rot at point j. */
   su2double *Temp_vib_i, /*!< \brief Temperature vibrational at point i. */
