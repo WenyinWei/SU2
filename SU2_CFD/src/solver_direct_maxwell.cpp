@@ -547,13 +547,18 @@ void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
 
     /*--- Eddy viscosity to compute thermal conductivity ---*/
     if (flow) {
+      /* 
+       * TODO: \author: Wenyin
+       * I am not sure whether the if branch would be judged every time when computing the numerics. 
+       * If so, that may waste too much computational resources. 
+       */
       // thermal_diffusivity_i = (laminar_viscosity/Prandtl_Lam) + (eddy_viscosity_i/Prandtl_Turb);
       // thermal_diffusivity_j = (laminar_viscosity/Prandtl_Lam) + (eddy_viscosity_j/Prandtl_Turb);
       // TODO: The fluid maxwell parameters rely on the certant 
-      maxwell_permittivity_i = 1.0;
-      maxwell_permittivity_j = 1.0;
-      maxwell_peameability_i = 1.0;
-      maxwell_peameability_j = 1.0;
+      maxwell_permittivity_i = 8.85E-12;
+      maxwell_permittivity_j = 8.85E-12;
+      maxwell_peameability_i = 4*M_PI*1E-7;
+      maxwell_peameability_j = 4*M_PI*1E-7;
     }
     else {
       // thermal_diffusivity_i = config->GetThermalDiffusivity_Solid();
