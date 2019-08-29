@@ -114,7 +114,7 @@ CSourceFluxSplit_Maxwell::~CSourceFluxSplit_Maxwell(void) {
 void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2double **Jacobian_i, su2double **Jacobian_j, CConfig *config) {
 
   AD::StartPreacc();
-  AD::SetPreaccIn(Normal, nDim); AD::SetPreaccIn(UnitNormal, nDim);
+  AD::SetPreaccIn(Normal, nDim); 
   AD::SetPreaccIn(Maxwell_U_i, nVar); AD::SetPreaccIn(Maxwell_U_j, nVar);
   AD::SetPreaccIn(Maxwell_Permittivity_i); AD::SetPreaccIn(Maxwell_Permittivity_j);
   AD::SetPreaccIn(Maxwell_Peameability_i); AD::SetPreaccIn(Maxwell_Peameability_j);
@@ -122,16 +122,17 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
 
   /*--- Compute vector going from iPoint to jPoint ---*/
   // dist_ij_2 = 0; proj_vector_ij = 0; 
-  area_face = 0.0; 
+  Area = 0.0; 
   for (iDim = 0; iDim < nDim; iDim++) {
-    area_face += Normal[iDim]*Normal[iDim];
+    Area += Normal[iDim]*Normal[iDim];
     // Edge_Vector[iDim] = Coord_j[iDim]-Coord_i[iDim];
     // dist_ij_2 += Edge_Vector[iDim]*Edge_Vector[iDim];
     // proj_vector_ij += Edge_Vector[iDim]*Normal[iDim];
   };
   // if (dist_ij_2 == 0.0) {proj_vector_ij = 0.0;}
   // else proj_vector_ij = proj_vector_ij/dist_ij_2;
-  if (area_face != 0) area_face = sqrt(area_face); 
+  if (Area != 0) Area = sqrt(Area); 
+  for (iDim = 0; iDim < nDim; iDim++) UnitNormal[iDim] = Normal[iDim]/Area;
 
   Compute_Aofn(Maxwell_Permittivity_i, Maxwell_Peameability_i, UnitNormal, BOOL_POSITIVE, Aofn_i);
   Compute_Aofn(Maxwell_Permittivity_j, Maxwell_Peameability_j, UnitNormal, BOOL_NEGATIVE, Aofn_j);
