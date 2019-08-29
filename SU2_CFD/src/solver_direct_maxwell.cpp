@@ -500,8 +500,8 @@ void CMaxwellSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_cont
 
 void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CNumerics *second_numerics, CConfig *config, unsigned short iMesh) {
 
-  su2double laminar_viscosity, Prandtl_Lam, Prandtl_Turb, eddy_viscosity_i, eddy_viscosity_j,
-      thermal_diffusivity_i, thermal_diffusivity_j, Temp_i, Temp_j, **Temp_i_Grad, **Temp_j_Grad;
+  // su2double laminar_viscosity, Prandtl_Lam, Prandtl_Turb, eddy_viscosity_i, eddy_viscosity_j,
+  //     thermal_diffusivity_i, thermal_diffusivity_j, Temp_i, Temp_j, **Temp_i_Grad, **Temp_j_Grad;
   su2double maxwell_permittivity_i, maxwell_permittivity_j, maxwell_peameability_i, maxwell_peameability_j;
   su2double *Maxwell_U_i, *Maxwell_U_j;
 
