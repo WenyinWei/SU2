@@ -1512,7 +1512,7 @@ void CMaxwellSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solv
       Jacobian.AddVal2Diag(iPoint, Delta);
 
       /*--- \author: Wenyin 
-      TODO： I am strange that why there is difference between flow solver and other solvers.
+      TODO： I feel strange that why there is difference between flow solver and other solvers.
       So I suggest to ask the one who charge this in the heat solver ---*/
       // if(flow) {
       //   Delta = Vol / node[iPoint]->GetDelta_Time();
