@@ -978,6 +978,10 @@ void CConfig::SetConfig_Options() {
   addDoubleOption("FREESTREAM_VISCOSITY", Viscosity_FreeStream, -1.0);
   /* DESCRIPTION: Thermal conductivity used for heat equation */
   addDoubleOption("THERMAL_CONDUCTIVITY_SOLID", Thermal_Conductivity_Solid, 0.0);
+  /* DESCRIPTION: Electric permittivity used for maxwell equations */
+  addDoubleOption("MAXWELL_PERMITTIVITY_SOLID", Maxwell_Permittivity_Solid, 8.85E-12);
+  /* DESCRIPTION: Magnetic peameability used for maxwell equations */
+  addDoubleOption("MAXWELL_CONDUCTIVITY_SOLID", Maxwell_Peameability_Solid, 4*M_PI*1E-7);
   /* DESCRIPTION: Solids temperature at freestream conditions */
   addDoubleOption("SOLID_TEMPERATURE_INIT", Temperature_Freestream_Solid, 288.15);
   /* DESCRIPTION: Density used in solids */
