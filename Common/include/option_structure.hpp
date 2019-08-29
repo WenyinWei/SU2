@@ -213,7 +213,7 @@ enum ENUM_SOLVER {
   FEM_NAVIER_STOKES = 51,               /*!< \brief Definition of the finite element Navier-Stokes' solver. */
   FEM_RANS = 52,                        /*!< \brief Definition of the finite element Reynolds-averaged Navier-Stokes' (RANS) solver. */
   FEM_LES = 53,                         /*!< \brief Definition of the finite element Large Eddy Simulation Navier-Stokes' (LES) solver. */
-  MAXWELL_EQUATION = 70,                /*!< \brief Definition of the finite volume maxwell equations solver. */
+  MAXWELL_EQUATION_FVM = 70,            /*!< \brief Definition of the finite volume maxwell equations solver. */
   MULTIPHYSICS = 99
 };
 /* BEGIN_CONFIG_ENUMS */
@@ -230,6 +230,7 @@ static const map<string, ENUM_SOLVER> Solver_Map = CCreateMap<string, ENUM_SOLVE
 ("ADJ_NAVIER_STOKES", ADJ_NAVIER_STOKES)
 ("ADJ_RANS", ADJ_RANS )
 ("HEAT_EQUATION_FVM", HEAT_EQUATION_FVM)
+("MAXWELL_EQUATION_FVM", MAXWELL_EQUATION_FVM)
 ("ELASTICITY", FEM_ELASTICITY)
 ("DISC_ADJ_EULER", DISC_ADJ_EULER)
 ("DISC_ADJ_RANS", DISC_ADJ_RANS)

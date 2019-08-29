@@ -106,6 +106,8 @@ CSourceFluxSplit_Maxwell::~CSourceFluxSplit_Maxwell(void) {
   }
   delete [] Aofn_i; 
   delete [] Aofn_j;
+  delete [] Temp_Six_Vector_i;
+  delete [] Temp_Six_Vector_j;
 
 }
 
@@ -133,8 +135,9 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
 
   Compute_Aofn(Maxwell_Permittivity_i, Maxwell_Peameability_i, UnitNormal, BOOL_POSITIVE, Aofn_i);
   Compute_Aofn(Maxwell_Permittivity_j, Maxwell_Peameability_j, UnitNormal, BOOL_NEGATIVE, Aofn_j);
-  su2double Y_i = sqrt(Maxwell_Permittivity_i/Maxwell_Peameability_i), Z_i =1/Y_i;
-  su2double Y_j = sqrt(Maxwell_Permittivity_j/Maxwell_Peameability_j), Z_j =1/Y_j;
+  // TODO: These variables are needed in the further improvement
+  // su2double Y_i = sqrt(Maxwell_Permittivity_i/Maxwell_Peameability_i), Z_i =1/Y_i;
+  // su2double Y_j = sqrt(Maxwell_Permittivity_j/Maxwell_Peameability_j), Z_j =1/Y_j;
 
 
   /*--- Compute A*U matrix-vector product ---*/
@@ -167,7 +170,8 @@ void CSourceFluxSplit_Maxwell::ComputeResidual(su2double *val_residual, su2doubl
 
 }
 
-
+// TODO: Wenyin still not clear about the mechanism that how to correct the flux based on Edge_Vector and Surface Normal vector. 
+// Probably there is no need to make a corrected version of maxwell numerics.
 // CSourceFluxSplitCorrected_Maxwell::CSourceFluxSplitCorrected_Maxwell(unsigned short val_nDim, unsigned short val_nVar,
 //                                                    CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 

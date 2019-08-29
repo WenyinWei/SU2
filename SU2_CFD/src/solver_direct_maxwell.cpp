@@ -56,7 +56,7 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
                || (config->GetKind_Solver() == RANS)
                || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
                || (config->GetKind_Solver() == DISC_ADJ_RANS));
-  bool maxwell_equation = (config->GetKind_Solver() == MAXWELL_EQUATION); //TODO: Is it enough? might need to add an option in config.cpp
+  bool maxwell_equation = (config->GetKind_Solver() == MAXWELL_EQUATION_FVM); //TODO: Is it enough? might need to add an option in config.cpp
 
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -137,7 +137,11 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
   LinSysSol.Initialize(nPoint, nPointDomain, nVar, 0.0);
   LinSysRes.Initialize(nPoint, nPointDomain, nVar, 0.0);
 
-  if (config->GetExtraOutput()) {// TODO: Not sure how many sure be in the maxwell case
+  /* 
+   * TODO: Not sure how many spaces sure be skipped in the maxwell case.
+   * Now it still follows the Heat Solver case.
+   */
+  if (config->GetExtraOutput()) {
     if (nDim == 2) { nOutputVariables = 13; }
     else if (nDim == 3) { nOutputVariables = 19; }
     OutputVariables.Initialize(nPoint, nPointDomain, nOutputVariables, 0.0);
@@ -235,7 +239,7 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
     }
   }
 
-  /*--- All point variables are initialized with 0, where the Residual vector variable serves as the zero vector. ---*/
+  /*--- All point variables are initialized with 0, where the Residual vector variable serves as a temporary zero vector. ---*/
   for (iPoint = 0; iPoint < nPoint; iPoint++)
     if (flow)
       node[iPoint] = new CMaxwellVariable(Residual, nDim, nVar, config);
@@ -285,7 +289,7 @@ void CMaxwellSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfi
                || (config->GetKind_Solver() == RANS)
                || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
                || (config->GetKind_Solver() == DISC_ADJ_RANS));
-  bool maxwell_equation = (config->GetKind_Solver() == MAXWELL_EQUATION);
+  bool maxwell_equation = (config->GetKind_Solver() == MAXWELL_EQUATION_FVM);
 
   su2double Area_Children, Area_Parent, *Coord, *Solution_Fine;
   bool dual_time = ((config->GetUnsteady_Simulation() == DT_STEPPING_1ST) ||
@@ -554,10 +558,12 @@ void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
        * TODO: \author: Wenyin
        * I am not sure whether the if branch would be judged every time when computing the numerics. 
        * If so, that may waste too much computational resources. 
+       * Moving the if branch out of the edges loop would be better.  
        */
       // thermal_diffusivity_i = (laminar_viscosity/Prandtl_Lam) + (eddy_viscosity_i/Prandtl_Turb);
       // thermal_diffusivity_j = (laminar_viscosity/Prandtl_Lam) + (eddy_viscosity_j/Prandtl_Turb);
-      // TODO: The fluid maxwell parameters rely on the certant 
+      // TODO: The fluid maxwell parameters rely on the certain fluid (or plasma) parameters.
+      // Now the default is that all kinds of fluid share the same EM parameters. 
       maxwell_permittivity_i = 8.85E-12;
       maxwell_permittivity_j = 8.85E-12;
       maxwell_peameability_i = 4*M_PI*1E-7;
@@ -566,7 +572,6 @@ void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
     else {
       // thermal_diffusivity_i = config->GetThermalDiffusivity_Solid();
       // thermal_diffusivity_j = config->GetThermalDiffusivity_Solid();
-      // TODO: To modify the corresponding config function
       maxwell_permittivity_i = config->GetMaxwellPermittivity_Solid();
       maxwell_permittivity_j = config->GetMaxwellPermittivity_Solid();
       maxwell_peameability_i = config->GetMaxwellPeameability_Solid();
@@ -574,7 +579,6 @@ void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
     }
 
     // numerics->SetThermalDiffusivity(thermal_diffusivity_i,thermal_diffusivity_j);
-    // TODO: To modify the corresponding config function
     numerics->SetMaxwellPermittivity(maxwell_permittivity_i, maxwell_permittivity_j);
     numerics->SetMaxwellPeameability(maxwell_peameability_i, maxwell_peameability_j);
     /*--- Compute residual, and Jacobians ---*/
