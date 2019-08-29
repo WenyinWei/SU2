@@ -280,6 +280,7 @@ void CMaxwellSolver::Preprocessing(CGeometry *geometry, CSolver **solver_contain
 
 void CMaxwellSolver::Postprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iMesh) { }
 
+// TODO: The skipvars variable needs to be checked for Maxwell case
 void CMaxwellSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig *config, int val_iter, bool val_update_geo) {
 
   /*--- Restart the solution from file information ---*/
@@ -519,7 +520,7 @@ void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
                || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
                || (config->GetKind_Solver() == DISC_ADJ_RANS));
 
-  bool turb = ((config->GetKind_Solver() == RANS) || (config->GetKind_Solver() == DISC_ADJ_RANS));
+  // bool turb = ((config->GetKind_Solver() == RANS) || (config->GetKind_Solver() == DISC_ADJ_RANS));
 
   // eddy_viscosity_i = 0.0;
   // eddy_viscosity_j = 0.0;
@@ -670,8 +671,7 @@ void CMaxwellSolver::BC_Isothermal_Wall(CGeometry *geometry, CSolver **solver_co
   unsigned short iDim;
   su2double *Normal, *Coord_i, *Coord_j, Area, dist_ij, laminar_viscosity, thermal_diffusivity, Twall, dTdn, Prandtl_Lam;
   //su2double Prandtl_Turb;
-  // TODO: The implicit variable is acquired by GetKind_TimeIntScheme_FLow for Heat Solver class. However, I doubt that it wrong. 
-  // If possible, please contact the one in charge of the heat solver to ask why he/she thought that is right to use flow sovler TimeIntScheme to run Heat solver.  
+  // TODO: If possible, please contact the one in charge of the heat solver to ask why he/she thought that is right to use flow sovler TimeIntScheme to run Heat solver.  
   bool implicit = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT); 
   bool flow = ((config->GetKind_Solver() == NAVIER_STOKES)
                || (config->GetKind_Solver() == RANS)
