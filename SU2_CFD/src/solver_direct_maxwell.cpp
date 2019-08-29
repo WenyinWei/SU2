@@ -56,13 +56,13 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
                || (config->GetKind_Solver() == RANS)
                || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
                || (config->GetKind_Solver() == DISC_ADJ_RANS));
-  bool maxwell_equation = (config->GetKind_Solver() == MAXWELL_EQUATION);
+  bool maxwell_equation = (config->GetKind_Solver() == MAXWELL_EQUATION); //TODO: Is it enough? might need to add an option in config.cpp
 
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  /*--- Dimension of the problem --> temperature is the only conservative variable ---*/
+  /*--- Dimension of the problem --> 6 conservative variables including $(E_x,E_y,E_z,H_x,H_y,H_z)$. ---*/
 
   nVar = 6;
   nPoint = geometry->GetnPoint();
@@ -126,7 +126,7 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
 
   /*--- Initialization of the structure of the whole Jacobian ---*/
 
-  if (rank == MASTER_NODE) cout << "Initialize Jacobian structure (heat equation) MG level: " << iMesh << "." << endl;
+  if (rank == MASTER_NODE) cout << "Initialize Jacobian structure (maxwell equation) MG level: " << iMesh << "." << endl;
   Jacobian.Initialize(nPoint, nPointDomain, nVar, nVar, true, geometry, config);
 
   if (config->GetKind_Linear_Solver_Prec() == LINELET) {
@@ -137,7 +137,7 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
   LinSysSol.Initialize(nPoint, nPointDomain, nVar, 0.0);
   LinSysRes.Initialize(nPoint, nPointDomain, nVar, 0.0);
 
-  if (config->GetExtraOutput()) {
+  if (config->GetExtraOutput()) {// TODO: Not sure how many sure be in the maxwell case
     if (nDim == 2) { nOutputVariables = 13; }
     else if (nDim == 3) { nOutputVariables = 19; }
     OutputVariables.Initialize(nPoint, nPointDomain, nOutputVariables, 0.0);
@@ -210,7 +210,9 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
       ConjugateVar[iMarker][iVertex][0] = config->GetTemperature_FreeStreamND();
     }
   }
-  // The following code is for heat solver, you probably will not need a reference value for maxwell equation
+
+  /*--- The following code is for heat solver, you probably will not need the diffusivity 
+  value for maxwell equation cause there is no correspondence ---*/
   // /*--- If the heat solver runs stand-alone, we have to set the reference values ---*/
   // if(heat_equation) {
   //   su2double rho_cp = config->GetDensity_Solid()*config->GetSpecific_Heat_Cp_Solid();
@@ -233,11 +235,12 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
     }
   }
 
-    for (iPoint = 0; iPoint < nPoint; iPoint++)
-      if (flow)
-        node[iPoint] = new CMaxwellVariable(config->GetTemperature_FreeStreamND(), nDim, nVar, config);
-      else
-        node[iPoint] = new CMaxwellVariable(Temperature_Solid_Freestream_ND, nDim, nVar, config);
+  /*--- All point variables are initialized with 0, where the Residual vector variable serves as the zero vector. ---*/
+  for (iPoint = 0; iPoint < nPoint; iPoint++)
+    if (flow)
+      node[iPoint] = new CMaxwellVariable(Residual, nDim, nVar, config);
+    else
+      node[iPoint] = new CMaxwellVariable(Residual, nDim, nVar, config);
 
   /*--- MPI solution ---*/
   
@@ -320,13 +323,13 @@ void CMaxwellSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfi
     if (nDim == 2) skipVars += 5;
     if (nDim == 3) skipVars += 7;
   }
-  else if (heat_equation) {
+  else if (maxwell_equation) { // TODO: Not really sure how many variables should be skipped in pure Maxwell equations solver.
 
     if (nDim == 2) skipVars += 2;
     if (nDim == 3) skipVars += 3;
   }
   else {
-    cout << "WARNING: Finite volume heat solver's restart routine could not load data." << endl;
+    cout << "WARNING: Finite volume maxwell solver's restart routine could not load data." << endl;
   }
 
   /*--- Multizone problems require the number of the zone to be appended. ---*/
@@ -663,8 +666,9 @@ void CMaxwellSolver::BC_Isothermal_Wall(CGeometry *geometry, CSolver **solver_co
   unsigned short iDim;
   su2double *Normal, *Coord_i, *Coord_j, Area, dist_ij, laminar_viscosity, thermal_diffusivity, Twall, dTdn, Prandtl_Lam;
   //su2double Prandtl_Turb;
-  bool implicit = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
-
+  // TODO: The implicit variable is acquired by GetKind_TimeIntScheme_FLow for Heat Solver class. However, I doubt that it wrong. 
+  // If possible, please contact the one in charge of the heat solver to ask why he/she thought that is right to use flow sovler TimeIntScheme to run Heat solver.  
+  bool implicit = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT); 
   bool flow = ((config->GetKind_Solver() == NAVIER_STOKES)
                || (config->GetKind_Solver() == RANS)
                || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
@@ -800,7 +804,7 @@ void CMaxwellSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container,
 
   bool viscous              = config->GetViscous();
   bool grid_movement        = config->GetGrid_Movement();
-  bool implicit             = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
+  bool implicit             = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT);
   string Marker_Tag         = config->GetMarker_All_TagBound(val_marker);
 
   su2double *Normal = new su2double[nDim];
@@ -917,7 +921,7 @@ void CMaxwellSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
                || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
                || (config->GetKind_Solver() == DISC_ADJ_RANS));
   bool grid_movement        = config->GetGrid_Movement();
-  bool implicit             = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
+  bool implicit             = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT);
 
   su2double *Normal = new su2double[nDim];
 
@@ -983,7 +987,7 @@ void CMaxwellSolver::BC_ConjugateHeat_Interface(CGeometry *geometry, CSolver **s
   su2double Area, rho_cp_solid,
       Temperature_Ref, Tinterface, T_Conjugate, Tnormal_Conjugate, Conductance, HeatFluxDensity, HeatFluxValue;
 
-  bool implicit      = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
+  bool implicit      = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT);
   bool flow = ((config->GetKind_Solver() == NAVIER_STOKES)
                || (config->GetKind_Solver() == RANS)
                || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
@@ -1222,7 +1226,7 @@ void CMaxwellSolver::SetTime_Step(CGeometry *geometry, CSolver **solver_containe
   bool turb = ((config->GetKind_Solver() == RANS) || (config->GetKind_Solver() == DISC_ADJ_RANS));
   bool dual_time = ((config->GetUnsteady_Simulation() == DT_STEPPING_1ST) ||
                     (config->GetUnsteady_Simulation() == DT_STEPPING_2ND));
-  bool implicit = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
+  bool implicit = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT);
 
   eddy_viscosity    = 0.0;
   laminar_viscosity = config->GetMu_ConstantND();
@@ -1425,7 +1429,6 @@ void CMaxwellSolver::SetTime_Step(CGeometry *geometry, CSolver **solver_containe
   }
 }
 
-// No necessity to change this function
 void CMaxwellSolver::ExplicitEuler_Iteration(CGeometry *geometry, CSolver **solver_container, CConfig *config) {
 
   su2double *local_Residual, *local_Res_TruncError, Vol, Delta, Res;
@@ -1505,14 +1508,20 @@ void CMaxwellSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solv
 
     if (node[iPoint]->GetDelta_Time() != 0.0) {
 
-      if(flow) {
-        Delta = Vol / node[iPoint]->GetDelta_Time();
-        Jacobian.AddVal2Diag(iPoint, Delta);
-      }
-      else {
-        Delta = Vol / node[iPoint]->GetDelta_Time();
-        Jacobian.AddVal2Diag(iPoint, Delta);
-      }
+      Delta = Vol / node[iPoint]->GetDelta_Time();
+      Jacobian.AddVal2Diag(iPoint, Delta);
+
+      /*--- \author: Wenyin 
+      TODO： I am strange that why there is difference between flow solver and other solvers.
+      So I suggest to ask the one who charge this in the heat solver ---*/
+      // if(flow) {
+      //   Delta = Vol / node[iPoint]->GetDelta_Time();
+      //   Jacobian.AddVal2Diag(iPoint, Delta);
+      // }
+      // else {
+      //   Delta = Vol / node[iPoint]->GetDelta_Time();
+      //   Jacobian.AddVal2Diag(iPoint, Delta);
+      // }
 
     } else {
       Jacobian.SetVal2Diag(iPoint, 1.0);
@@ -1565,7 +1574,6 @@ void CMaxwellSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solv
 
 }
 
-//No need to change this function
 void CMaxwellSolver::SetInitialCondition(CGeometry **geometry, CSolver ***solver_container, CConfig *config, unsigned long ExtIter) {
 
   unsigned long iPoint, Point_Fine;
@@ -1645,7 +1653,7 @@ void CMaxwellSolver::SetResidual_DualTime(CGeometry *geometry, CSolver **solver_
   su2double *U_time_n, *U_time_nP1, *U_time_nM1;
   su2double Volume_nP1, TimeStep;
 
-  bool implicit       = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
+  bool implicit       = (config->GetKind_TimeIntScheme_Maxwell() == EULER_IMPLICIT);
   bool grid_movement  = config->GetGrid_Movement();
 
   /*--- Store the physical time step ---*/
@@ -1703,7 +1711,6 @@ void CMaxwellSolver::SetResidual_DualTime(CGeometry *geometry, CSolver **solver_
   }
 }
 
-// No need to change this function
 void CMaxwellSolver::ComputeResidual_Multizone(CGeometry *geometry, CConfig *config){
 
   unsigned short iVar;
