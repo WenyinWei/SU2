@@ -2925,7 +2925,7 @@ void CDriver::Numerics_Postprocessing(CNumerics *****numerics,
 
     if (maxwell_fvm) {
 
-      /*--- Definition of the viscous scheme for each equation and mesh level ---*/
+      /*--- Definition of the maxwell flux-splitting scheme for each equation and mesh level ---*/
       for (iMGlevel = 0; iMGlevel <= config->GetnMGLevels(); iMGlevel++) {
 
         delete numerics[val_iInst][iMGlevel][MAXW_SOL][SOURCE_FIRST_TERM];
