@@ -1417,6 +1417,184 @@ void CHeatIteration::Solve(COutput *output,
 
 }
 
+
+CMaxwellIteration::CMaxwellIteration(CConfig *config) : CIteration(config) { }
+
+CMaxwellIteration::~CMaxwellIteration(void) { }
+
+void CMaxwellIteration::Preprocess(COutput *output,
+                                CIntegration ****integration,
+                                CGeometry ****geometry,
+                                CSolver *****solver,
+                                CNumerics ******numerics,
+                                CConfig **config,
+                                CSurfaceMovement **surface_movement,
+                                CVolumetricMovement ***grid_movement,
+                                CFreeFormDefBox*** FFDBox,
+                                unsigned short val_iZone,
+                                unsigned short val_iInst) {
+
+  unsigned long OuterIter = config[val_iZone]->GetOuterIter();
+
+  /*--- Evaluate the new CFL number (adaptive). ---*/
+  if ((config[val_iZone]->GetCFL_Adapt() == YES) && ( OuterIter != 0 ) ) {
+    output->SetCFL_Number(solver, config, val_iZone);
+  }
+
+}
+
+void CMaxwellIteration::Iterate(COutput *output,
+                             CIntegration ****integration,
+                             CGeometry ****geometry,
+                             CSolver *****solver,
+                             CNumerics ******numerics,
+                             CConfig **config,
+                             CSurfaceMovement **surface_movement,
+                             CVolumetricMovement ***grid_movement,
+                             CFreeFormDefBox*** FFDBox,
+                             unsigned short val_iZone,
+                             unsigned short val_iInst) {
+
+  unsigned long IntIter, ExtIter;
+  bool unsteady = (config[val_iZone]->GetUnsteady_Simulation() == DT_STEPPING_1ST) || (config[val_iZone]->GetUnsteady_Simulation() == DT_STEPPING_2ND);
+  
+  ExtIter = config[val_iZone]->GetExtIter();
+  
+  /* --- Setting up iteration values depending on if this is a
+   steady or an unsteady simulaiton */
+
+  if ( !unsteady ) IntIter = ExtIter;
+  else IntIter = config[val_iZone]->GetIntIter();
+  
+  /*--- Update global parameters ---*/
+
+  config[val_iZone]->SetGlobalParam(HEAT_EQUATION_FVM, RUNTIME_HEAT_SYS, ExtIter);
+
+  integration[val_iZone][val_iInst][HEAT_SOL]->SingleGrid_Iteration(geometry, solver, numerics,
+                                                                   config, RUNTIME_HEAT_SYS, IntIter, val_iZone, val_iInst);
+  
+  /*--- Write the convergence history ---*/
+
+  if ( unsteady && !config[val_iZone]->GetDiscrete_Adjoint() ) {
+
+    output->SetConvHistory_Body(NULL, geometry, solver, config, integration, true, 0.0, val_iZone, val_iInst);
+  }
+}
+
+void CMaxwellIteration::Update(COutput *output,
+                            CIntegration ****integration,
+                            CGeometry ****geometry,
+                            CSolver *****solver,
+                            CNumerics ******numerics,
+                            CConfig **config,
+                            CSurfaceMovement **surface_movement,
+                            CVolumetricMovement ***grid_movement,
+                            CFreeFormDefBox*** FFDBox,
+                            unsigned short val_iZone,
+                            unsigned short val_iInst)      {
+  
+  unsigned short iMesh;
+  su2double Physical_dt, Physical_t;
+  unsigned long ExtIter = config[ZONE_0]->GetExtIter();
+  
+  /*--- Dual time stepping strategy ---*/
+  if ((config[val_iZone]->GetUnsteady_Simulation() == DT_STEPPING_1ST) ||
+      (config[val_iZone]->GetUnsteady_Simulation() == DT_STEPPING_2ND)) {
+    
+    /*--- Update dual time solver ---*/
+    for (iMesh = 0; iMesh <= config[val_iZone]->GetnMGLevels(); iMesh++) {
+      integration[val_iZone][val_iInst][HEAT_SOL]->SetDualTime_Solver(geometry[val_iZone][val_iInst][iMesh], solver[val_iZone][val_iInst][iMesh][HEAT_SOL], config[val_iZone], iMesh);
+      integration[val_iZone][val_iInst][HEAT_SOL]->SetConvergence(false);
+    }
+    
+    Physical_dt = config[val_iZone]->GetDelta_UnstTime();
+    Physical_t  = (ExtIter+1)*Physical_dt;
+    if (Physical_t >=  config[val_iZone]->GetTotal_UnstTime())
+      integration[val_iZone][val_iInst][HEAT_SOL]->SetConvergence(true);
+  }
+}
+bool CMaxwellIteration::Monitor(COutput *output,
+    CIntegration ****integration,
+    CGeometry ****geometry,
+    CSolver *****solver,
+    CNumerics ******numerics,
+    CConfig **config,
+    CSurfaceMovement **surface_movement,
+    CVolumetricMovement ***grid_movement,
+    CFreeFormDefBox*** FFDBox,
+    unsigned short val_iZone,
+    unsigned short val_iInst)     { return false; }
+void CMaxwellIteration::Postprocess(COutput *output,
+                                 CIntegration ****integration,
+                                 CGeometry ****geometry,
+                                 CSolver *****solver,
+                                 CNumerics ******numerics,
+                                 CConfig **config,
+                                 CSurfaceMovement **surface_movement,
+                                 CVolumetricMovement ***grid_movement,
+                                 CFreeFormDefBox*** FFDBox,
+                                 unsigned short val_iZone,
+                                 unsigned short val_iInst) { }
+
+void CMaxwellIteration::Solve(COutput *output,
+                             CIntegration ****integration,
+                             CGeometry ****geometry,
+                             CSolver *****solver,
+                             CNumerics ******numerics,
+                             CConfig **config,
+                             CSurfaceMovement **surface_movement,
+                             CVolumetricMovement ***grid_movement,
+                             CFreeFormDefBox*** FFDBox,
+                             unsigned short val_iZone,
+                             unsigned short val_iInst) {
+
+  /*--- Boolean to determine if we are running a steady or unsteady case ---*/
+  bool steady = (config[val_iZone]->GetUnsteady_Simulation() == STEADY);
+  bool unsteady = ((config[val_iZone]->GetUnsteady_Simulation() == DT_STEPPING_1ST) || (config[val_iZone]->GetUnsteady_Simulation() == DT_STEPPING_2ND));
+
+  unsigned short Inner_Iter, nInner_Iter = config[val_iZone]->GetnInner_Iter();
+  bool StopCalc = false;
+
+  /*--- Preprocess the solver ---*/
+  Preprocess(output, integration, geometry,
+      solver, numerics, config,
+      surface_movement, grid_movement, FFDBox, val_iZone, INST_0);
+
+  /*--- For steady-state flow simulations, we need to loop over ExtIter for the number of time steps ---*/
+  /*--- However, ExtIter is the number of FSI iterations, so nIntIter is used in this case ---*/
+
+  for (Inner_Iter = 0; Inner_Iter < nInner_Iter; Inner_Iter++){
+
+    /*--- For steady-state flow simulations, we need to loop over ExtIter for the number of time steps ---*/
+    if (steady) config[val_iZone]->SetExtIter(Inner_Iter);
+    /*--- For unsteady flow simulations, we need to loop over IntIter for the number of time steps ---*/
+    if (unsteady) config[val_iZone]->SetIntIter(Inner_Iter);
+    /*--- If only one internal iteration is required, the ExtIter/IntIter is the OuterIter of the block structure ---*/
+    if (nInner_Iter == 1) {
+      if (steady) config[val_iZone]->SetExtIter(config[val_iZone]->GetOuterIter());
+      if (unsteady) config[val_iZone]->SetIntIter(config[val_iZone]->GetOuterIter());
+    }
+
+    Iterate(output, integration, geometry,
+        solver, numerics, config,
+        surface_movement, grid_movement, FFDBox, val_iZone, INST_0);
+
+    /*--- Write the convergence history for the fluid (only screen output) ---*/
+    if (steady) output->SetConvHistory_Body(NULL, geometry, solver, config, integration, false, 0.0, val_iZone, INST_0);
+
+    /*--- If convergence was reached in every zone --*/
+    StopCalc = integration[val_iZone][INST_0][HEAT_SOL]->GetConvergence();
+    if (StopCalc) break;
+
+  }
+
+  /*--- Set the heat convergence to false (to make sure outer subiterations converge) ---*/
+  integration[val_iZone][INST_0][HEAT_SOL]->SetConvergence(false);
+
+  //output->SetConvHistory_Body(NULL, geometry, solver, config, integration, true, 0.0, val_iZone, INST_0);
+
+}
+
 CFEAIteration::CFEAIteration(CConfig *config) : CIteration(config) { }
 CFEAIteration::~CFEAIteration(void) { }
 void CFEAIteration::Preprocess() { }
