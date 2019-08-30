@@ -1469,9 +1469,9 @@ void CMaxwellIteration::Iterate(COutput *output,
   /*--- Update global parameters ---*/
 
   config[val_iZone]->SetGlobalParam(MAXW_EQUATION_FVM, RUNTIME_MAXW_SYS, ExtIter);
-
-  integration[val_iZone][val_iInst][HEAT_SOL]->SingleGrid_Iteration(geometry, solver, numerics,
-                                                                   config, RUNTIME_HEAT_SYS, IntIter, val_iZone, val_iInst);
+  // TODO: What needs to be done in the SingleGrid_Iteration function? I found this is a blank function
+  integration[val_iZone][val_iInst][MAXW_SOL]->SingleGrid_Iteration(geometry, solver, numerics,
+                                                                   config, RUNTIME_MAXW_SYS, IntIter, val_iZone, val_iInst);
   
   /*--- Write the convergence history ---*/
 
@@ -1502,8 +1502,9 @@ void CMaxwellIteration::Update(COutput *output,
       (config[val_iZone]->GetUnsteady_Simulation() == DT_STEPPING_2ND)) {
     
     /*--- Update dual time solver ---*/
+    // TODO: Check whether or not we have implemented the two methods
     for (iMesh = 0; iMesh <= config[val_iZone]->GetnMGLevels(); iMesh++) {
-      integration[val_iZone][val_iInst][MAXW_SOL]->SetDualTime_Solver(geometry[val_iZone][val_iInst][iMesh], solver[val_iZone][val_iInst][iMesh][HEAT_SOL], config[val_iZone], iMesh);
+      integration[val_iZone][val_iInst][MAXW_SOL]->SetDualTime_Solver(geometry[val_iZone][val_iInst][iMesh], solver[val_iZone][val_iInst][iMesh][MAXW_SOL], config[val_iZone], iMesh);
       integration[val_iZone][val_iInst][MAXW_SOL]->SetConvergence(false);
     }
     
@@ -1588,7 +1589,7 @@ void CMaxwellIteration::Solve(COutput *output,
 
   }
 
-  /*--- Set the heat convergence to false (to make sure outer subiterations converge) ---*/
+  /*--- Set the maxwell convergence to false (to make sure outer subiterations converge) ---*/
   integration[val_iZone][INST_0][MAXW_SOL]->SetConvergence(false);
 
   //output->SetConvHistory_Body(NULL, geometry, solver, config, integration, true, 0.0, val_iZone, INST_0);

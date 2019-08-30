@@ -7638,6 +7638,12 @@ void CConfig::SetGlobalParam(unsigned short val_solver,
         SetKind_TimeIntScheme(Kind_TimeIntScheme_Heat);
       }
       break;
+    case MAXW_EQUATION_FVM:
+      if (val_system == RUNTIME_MAXW_SYS) {
+        SetKind_ConvNumScheme(NONE, NONE, NONE, NONE, NONE, NONE);
+        SetKind_TimeIntScheme(Kind_TimeIntScheme_Maxwell);
+      }
+      break;
 
     case FEM_ELASTICITY:
 
