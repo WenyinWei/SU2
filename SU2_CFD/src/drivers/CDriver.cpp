@@ -2925,26 +2925,26 @@ void CDriver::Numerics_Postprocessing(CNumerics *****numerics,
 
     if (maxwell_fvm) {
 
-    /*--- Definition of the viscous scheme for each equation and mesh level ---*/
-    for (iMGlevel = 0; iMGlevel <= config->GetnMGLevels(); iMGlevel++) {
+      /*--- Definition of the viscous scheme for each equation and mesh level ---*/
+      for (iMGlevel = 0; iMGlevel <= config->GetnMGLevels(); iMGlevel++) {
 
-      delete numerics[val_iInst][iMGlevel][MAXW_SOL][SOURCE_FIRST_TERM];
+        delete numerics[val_iInst][iMGlevel][MAXW_SOL][SOURCE_FIRST_TERM];
 
-      // delete numerics[val_iInst][iMGlevel][MAXW_SOL][VISC_TERM];
-      // delete numerics[val_iInst][iMGlevel][MAXW_SOL][VISC_BOUND_TERM];
+        // delete numerics[val_iInst][iMGlevel][MAXW_SOL][VISC_TERM];
+        // delete numerics[val_iInst][iMGlevel][MAXW_SOL][VISC_BOUND_TERM];
 
-      // switch (config->GetKind_ConvNumScheme_Maxwell()) {
-      //   case SPACE_UPWIND :
+        // switch (config->GetKind_ConvNumScheme_Maxwell()) {
+        //   case SPACE_UPWIND :
 
-      //     delete numerics[val_iInst][iMGlevel][MAXW_SOL][CONV_TERM];
-      //     delete numerics[val_iInst][iMGlevel][MAXW_SOL][CONV_BOUND_TERM];
-      //     break;
+        //     delete numerics[val_iInst][iMGlevel][MAXW_SOL][CONV_TERM];
+        //     delete numerics[val_iInst][iMGlevel][MAXW_SOL][CONV_BOUND_TERM];
+        //     break;
 
-      //   case SPACE_CENTERED :
+        //   case SPACE_CENTERED :
 
-      //     delete numerics[val_iInst][iMGlevel][MAXW_SOL][CONV_TERM];
-      //     delete numerics[val_iInst][iMGlevel][MAXW_SOL][CONV_BOUND_TERM];
-      //   break;
+        //     delete numerics[val_iInst][iMGlevel][MAXW_SOL][CONV_TERM];
+        //     delete numerics[val_iInst][iMGlevel][MAXW_SOL][CONV_BOUND_TERM];
+        //   break;
       }
     }
   }
