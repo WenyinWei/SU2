@@ -157,63 +157,47 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
       Smatrix[iDim] = new su2double [nDim];
   }
 
-  Heat_Flux = new su2double[nMarker];
-  AvgTemperature = new su2double[nMarker];
-  Surface_Areas = new su2double[config->GetnMarker_HeatFlux()];
+  // TODO: How to handle these variables?
+  // Heat_Flux = new su2double[nMarker];
+  // AvgTemperature = new su2double[nMarker];
+  // Surface_Areas = new su2double[config->GetnMarker_HeatFlux()];
 
-  for(iMarker = 0; iMarker < nMarker; iMarker++) {
-    Heat_Flux[iMarker] = 0.0;
-    AvgTemperature[iMarker] = 0.0;
-  }
-  for(iMarker = 0; iMarker < config->GetnMarker_HeatFlux(); iMarker++) {
-    Surface_Areas[iMarker] = 0.0;
-  }
+  // for(iMarker = 0; iMarker < nMarker; iMarker++) {
+  //   Heat_Flux[iMarker] = 0.0;
+  //   AvgTemperature[iMarker] = 0.0;
+  // }
+  // for(iMarker = 0; iMarker < config->GetnMarker_HeatFlux(); iMarker++) {
+  //   Surface_Areas[iMarker] = 0.0;
+  // }
 
-  Set_Heatflux_Areas(geometry, config);
+  // Set_Heatflux_Areas(geometry, config);
+  
 
-  /*--- Non-dimensionalization of heat equation */
-
-  su2double Temperature_FreeStream = config->GetInc_Temperature_Init();
-  config->SetTemperature_FreeStream(Temperature_FreeStream);
-  su2double Temperature_Ref = 0.0;
-
-  if (config->GetRef_Inc_NonDim() == DIMENSIONAL) {
-    Temperature_Ref = 1.0;
-  }
-  else if (config->GetRef_Inc_NonDim() == INITIAL_VALUES) {
-    Temperature_Ref = Temperature_FreeStream;
-  }
-  else if (config->GetRef_Inc_NonDim() == REFERENCE_VALUES) {
-    Temperature_Ref = config->GetInc_Temperature_Ref();
-  }
-  config->SetTemperature_Ref(Temperature_Ref);
-
-  config->SetTemperature_FreeStreamND(config->GetTemperature_FreeStream()/config->GetTemperature_Ref());
-  if (rank == MASTER_NODE) {
-    cout << "Weakly coupled heat solver's freestream temperature: " << config->GetTemperature_FreeStreamND() << endl;
-  }
-
-  su2double Temperature_Solid_Freestream_ND = config->GetTemperature_Freestream_Solid()/config->GetTemperature_Ref();
+  // su2double Temperature_Solid_Freestream_ND = config->GetTemperature_Freestream_Solid()/config->GetTemperature_Ref();
   if (maxwell_equation && (rank == MASTER_NODE)) {
-    cout << "Heat solver freestream temperature in case for solids: " << Temperature_Solid_Freestream_ND << endl;
+    cout << "Maxwell solver electric permittivity in case for solids: " << config->GetMaxwellPermittivity_Solid() << endl;
+    cout << "Maxwell solver magnetic peameability in case for solids: " << config->GetMaxwellPeameability_Solid() << endl;
+    // cout << "Heat solver freestream temperature in case for solids: " << Temperature_Solid_Freestream_ND << endl;
   }
 
-  /*--- Store the value of the temperature and the heat flux density at the boundaries,
-   used for IO with a donor cell ---*/
-  unsigned short nConjVariables = 4;
 
-  ConjugateVar = new su2double** [nMarker];
-  for (iMarker = 0; iMarker < nMarker; iMarker++) {
-    ConjugateVar[iMarker] = new su2double* [geometry->nVertex[iMarker]];
-    for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+  // TODO: for the Maxwell equations, the conjugate variable transfer is not yet confirmed 
+  // /*--- Store the value of the temperature and the heat flux density at the boundaries,
+  //  used for IO with a donor cell ---*/
+  // unsigned short nConjVariables = 4;
 
-      ConjugateVar[iMarker][iVertex] = new su2double [nConjVariables];
-      for (iVar = 0; iVar < nConjVariables ; iVar++) {
-        ConjugateVar[iMarker][iVertex][iVar] = 0.0;
-      }
-      ConjugateVar[iMarker][iVertex][0] = config->GetTemperature_FreeStreamND();
-    }
-  }
+  // ConjugateVar = new su2double** [nMarker];
+  // for (iMarker = 0; iMarker < nMarker; iMarker++) {
+  //   ConjugateVar[iMarker] = new su2double* [geometry->nVertex[iMarker]];
+  //   for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+
+  //     ConjugateVar[iMarker][iVertex] = new su2double [nConjVariables];
+  //     for (iVar = 0; iVar < nConjVariables ; iVar++) {
+  //       ConjugateVar[iMarker][iVertex][iVar] = 0.0;
+  //     }
+  //     ConjugateVar[iMarker][iVertex][0] = config->GetTemperature_FreeStreamND();
+  //   }
+  // }
 
   /*--- The following code is for heat solver, you probably will not need the diffusivity 
   value for maxwell equation cause there is no correspondence ---*/
@@ -225,6 +209,7 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
   // }
 
   if (multizone){
+    cout << "Warning: You are in multizone mode, which is not yet configured well for Maxwell solver.";
     /*--- Initialize the BGS residuals. ---*/
     Residual_BGS      = new su2double[nVar];         for (iVar = 0; iVar < nVar; iVar++) Residual_BGS[iVar]  = 0.0;
     Residual_Max_BGS  = new su2double[nVar];         for (iVar = 0; iVar < nVar; iVar++) Residual_Max_BGS[iVar]  = 0.0;
@@ -241,10 +226,7 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
 
   /*--- All point variables are initialized with 0, where the Residual vector variable serves as a temporary zero vector. ---*/
   for (iPoint = 0; iPoint < nPoint; iPoint++)
-    if (flow)
-      node[iPoint] = new CMaxwellVariable(Residual, nDim, nVar, config);
-    else
-      node[iPoint] = new CMaxwellVariable(Residual, nDim, nVar, config);
+    node[iPoint] = new CMaxwellVariable(Residual, nDim, nVar, config);
 
   /*--- MPI solution ---*/
   
