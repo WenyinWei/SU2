@@ -855,7 +855,7 @@ void CConfig::SetConfig_Options() {
   addDoubleOption("GAMMA_VALUE", Gamma, 1.4);
   /*!\brief CP_VALUE  \n DESCRIPTION: Specific heat at constant pressure, Cp (1004.703 J/kg*K (air), constant density incompressible fluids only) \ingroup Config*/
   addDoubleOption("SPECIFIC_HEAT_CP", Specific_Heat_Cp, 1004.703);
-  /*!\brief CP_VALUE  \n DESCRIPTION: Specific heat at constant volume, Cp (717.645 J/kg*K (air), constant density incompressible fluids only) \ingroup Config*/
+  /*!\brief CV_VALUE  \n DESCRIPTION: Specific heat at constant volume, Cv (717.645 J/kg*K (air), constant density incompressible fluids only) \ingroup Config*/
   addDoubleOption("SPECIFIC_HEAT_CV", Specific_Heat_Cv, 717.645);
   /* DESCRIPTION: Heat capacity used for heat equation */
   addDoubleOption("SPECIFIC_HEAT_CP_SOLID", Specific_Heat_Cp_Solid, 896.0);
@@ -7474,6 +7474,7 @@ unsigned short CConfig::GetContainerPosition(unsigned short val_eqsystem) {
     case RUNTIME_TURB_SYS:      return TURB_SOL;
     case RUNTIME_TRANS_SYS:     return TRANS_SOL;
     case RUNTIME_HEAT_SYS:      return HEAT_SOL;
+    case RUNTIME_MAXW_SYS:      return MAXW_SOL;
     case RUNTIME_FEA_SYS:       return FEA_SOL;
     case RUNTIME_ADJPOT_SYS:    return ADJFLOW_SOL;
     case RUNTIME_ADJFLOW_SYS:   return ADJFLOW_SOL;
