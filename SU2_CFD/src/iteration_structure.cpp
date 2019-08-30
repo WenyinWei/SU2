@@ -1468,7 +1468,7 @@ void CMaxwellIteration::Iterate(COutput *output,
   
   /*--- Update global parameters ---*/
 
-  config[val_iZone]->SetGlobalParam(HEAT_EQUATION_FVM, RUNTIME_HEAT_SYS, ExtIter);
+  config[val_iZone]->SetGlobalParam(MAXW_EQUATION_FVM, RUNTIME_MAXW_SYS, ExtIter);
 
   integration[val_iZone][val_iInst][HEAT_SOL]->SingleGrid_Iteration(geometry, solver, numerics,
                                                                    config, RUNTIME_HEAT_SYS, IntIter, val_iZone, val_iInst);
@@ -1503,14 +1503,14 @@ void CMaxwellIteration::Update(COutput *output,
     
     /*--- Update dual time solver ---*/
     for (iMesh = 0; iMesh <= config[val_iZone]->GetnMGLevels(); iMesh++) {
-      integration[val_iZone][val_iInst][HEAT_SOL]->SetDualTime_Solver(geometry[val_iZone][val_iInst][iMesh], solver[val_iZone][val_iInst][iMesh][HEAT_SOL], config[val_iZone], iMesh);
-      integration[val_iZone][val_iInst][HEAT_SOL]->SetConvergence(false);
+      integration[val_iZone][val_iInst][MAXW_SOL]->SetDualTime_Solver(geometry[val_iZone][val_iInst][iMesh], solver[val_iZone][val_iInst][iMesh][HEAT_SOL], config[val_iZone], iMesh);
+      integration[val_iZone][val_iInst][MAXW_SOL]->SetConvergence(false);
     }
     
     Physical_dt = config[val_iZone]->GetDelta_UnstTime();
     Physical_t  = (ExtIter+1)*Physical_dt;
     if (Physical_t >=  config[val_iZone]->GetTotal_UnstTime())
-      integration[val_iZone][val_iInst][HEAT_SOL]->SetConvergence(true);
+      integration[val_iZone][val_iInst][MAXW_SOL]->SetConvergence(true);
   }
 }
 bool CMaxwellIteration::Monitor(COutput *output,
@@ -1583,13 +1583,13 @@ void CMaxwellIteration::Solve(COutput *output,
     if (steady) output->SetConvHistory_Body(NULL, geometry, solver, config, integration, false, 0.0, val_iZone, INST_0);
 
     /*--- If convergence was reached in every zone --*/
-    StopCalc = integration[val_iZone][INST_0][HEAT_SOL]->GetConvergence();
+    StopCalc = integration[val_iZone][INST_0][MAXW_SOL]->GetConvergence();
     if (StopCalc) break;
 
   }
 
   /*--- Set the heat convergence to false (to make sure outer subiterations converge) ---*/
-  integration[val_iZone][INST_0][HEAT_SOL]->SetConvergence(false);
+  integration[val_iZone][INST_0][MAXW_SOL]->SetConvergence(false);
 
   //output->SetConvHistory_Body(NULL, geometry, solver, config, integration, true, 0.0, val_iZone, INST_0);
 

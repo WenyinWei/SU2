@@ -1043,7 +1043,7 @@ void CDriver::Solver_Preprocessing(CConfig* config, CGeometry** geometry, CSolve
     case FEM_RANS : fem_ns = true; fem_turbulent = true; if(config->GetKind_Trans_Model() == LM) fem_transition = true; break;
     case FEM_LES : fem_ns = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
-    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
+    case MAXW_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1280,7 +1280,7 @@ void CDriver::Inlet_Preprocessing(CSolver ***solver, CGeometry **geometry,
     case NAVIER_STOKES: ns = true; break;
     case RANS : ns = true; turbulent = true; break;
     case HEAT_EQUATION_FVM: heat = true; break;
-    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
+    case MAXW_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1422,7 +1422,7 @@ void CDriver::Solver_Restart(CSolver ***solver, CGeometry **geometry,
     case FEM_RANS : fem_ns = true; break;
     case FEM_LES : fem_ns = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
-    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
+    case MAXW_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1551,7 +1551,7 @@ void CDriver::Solver_Postprocessing(CSolver ****solver, CGeometry **geometry,
     case FEM_LES: ns = true; break;
     case FEM_RANS: ns = true; turbulent = true; if (config->GetKind_Trans_Model() == LM) transition = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
-    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
+    case MAXW_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1679,7 +1679,7 @@ void CDriver::Integration_Preprocessing(CConfig *config, CIntegration **&integra
     case FEM_RANS : fem_ns = true; fem_turbulent = true; break;
     case FEM_LES :  fem_ns = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
-    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
+    case MAXW_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1756,7 +1756,7 @@ void CDriver::Integration_Postprocessing(CIntegration ***integration, CGeometry 
     case FEM_RANS : fem_ns = true; fem_turbulent = true; break;
     case FEM_LES :  fem_ns = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
-    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
+    case MAXW_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1858,7 +1858,7 @@ void CDriver::Numerics_Preprocessing(CConfig *config, CSolver ***solver, CNumeri
     case FEM_RANS : case DISC_ADJ_FEM_RANS : fem_ns = true; fem_turbulent = true; break;
     case FEM_LES :  fem_ns = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
-    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
+    case MAXW_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: case DISC_ADJ_FEM: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -2702,7 +2702,7 @@ void CDriver::Numerics_Postprocessing(CNumerics *****numerics,
     case FEM_RANS : case DISC_ADJ_FEM_RANS : fem_ns = true; fem_turbulent = true; break;
     case FEM_LES :  fem_ns = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
-    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
+    case MAXW_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: case DISC_ADJ_FEM: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -3124,7 +3124,7 @@ void CDriver::Iteration_Preprocessing(CConfig* config, CIteration *&iteration) {
       iteration = new CHeatIteration(config);
       break;
             
-    case MAXWELL_EQUATION_FVM:
+    case MAXW_EQUATION_FVM:
       if (rank == MASTER_NODE)
         cout << "Maxwell iteration (finite volume method)." << endl;
       // TODO: Supplement the Iteration class
@@ -3942,7 +3942,7 @@ bool CDriver::Monitor(unsigned long ExtIter) {
     case HEAT_EQUATION_FVM:
       StopCalc = integration_container[ZONE_0][INST_0][HEAT_SOL]->GetConvergence(); break;
       // TODO: Make the Convergence criteria for Maxwell solver
-    case MAXWELL_EQUATION_FVM:
+    case MAXW_EQUATION_FVM:
       StopCalc = integration_container[ZONE_0][INST_0][MAXW_SOL]->GetConvergence(); break;
     case FEM_ELASTICITY:
       StopCalc = integration_container[ZONE_0][INST_0][FEA_SOL]->GetConvergence(); break;
@@ -7116,7 +7116,7 @@ void CMultiphysicsZonalDriver::Run() {
         checkConvergence += (int) integration_container[iZone][INST_0][ADJFLOW_SOL]->GetConvergence();
       else if ((config_container[iZone]->GetKind_Solver() == HEAT_EQUATION_FVM))
         checkConvergence += (int) integration_container[iZone][INST_0][HEAT_SOL]->GetConvergence();
-      else if ((config_container[iZone]->GetKind_Solver() == MAXWELL_EQUATION_FVM))
+      else if ((config_container[iZone]->GetKind_Solver() == MAXW_EQUATION_FVM))
         checkConvergence += (int) integration_container[iZone][INST_0][MAXW_SOL]->GetConvergence();
       // TODO: Remember to add Maxwell solver convergence check function
     }

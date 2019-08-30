@@ -56,7 +56,7 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
                || (config->GetKind_Solver() == RANS)
                || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
                || (config->GetKind_Solver() == DISC_ADJ_RANS));
-  bool maxwell_equation = (config->GetKind_Solver() == MAXWELL_EQUATION_FVM); //TODO: Is it enough? might need to add an option in config.cpp
+  bool maxwell_equation = (config->GetKind_Solver() == MAXW_EQUATION_FVM); //TODO: Is it enough? might need to add an option in config.cpp
 
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -291,7 +291,7 @@ void CMaxwellSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfi
                || (config->GetKind_Solver() == RANS)
                || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
                || (config->GetKind_Solver() == DISC_ADJ_RANS));
-  bool maxwell_equation = (config->GetKind_Solver() == MAXWELL_EQUATION_FVM);
+  bool maxwell_equation = (config->GetKind_Solver() == MAXW_EQUATION_FVM);
 
   su2double Area_Children, Area_Parent, *Coord, *Solution_Fine;
   bool dual_time = ((config->GetUnsteady_Simulation() == DT_STEPPING_1ST) ||

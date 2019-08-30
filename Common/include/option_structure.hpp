@@ -215,7 +215,7 @@ enum ENUM_SOLVER {
   FEM_NAVIER_STOKES = 51,               /*!< \brief Definition of the finite element Navier-Stokes' solver. */
   FEM_RANS = 52,                        /*!< \brief Definition of the finite element Reynolds-averaged Navier-Stokes' (RANS) solver. */
   FEM_LES = 53,                         /*!< \brief Definition of the finite element Large Eddy Simulation Navier-Stokes' (LES) solver. */
-  MAXWELL_EQUATION_FVM = 70,            /*!< \brief Definition of the finite volume maxwell equations solver. */
+  MAXW_EQUATION_FVM = 70,            /*!< \brief Definition of the finite volume maxwell equations solver. */
   MULTIPHYSICS = 99
 };
 /* BEGIN_CONFIG_ENUMS */
@@ -232,7 +232,7 @@ static const map<string, ENUM_SOLVER> Solver_Map = CCreateMap<string, ENUM_SOLVE
 ("ADJ_NAVIER_STOKES", ADJ_NAVIER_STOKES)
 ("ADJ_RANS", ADJ_RANS )
 ("HEAT_EQUATION_FVM", HEAT_EQUATION_FVM)
-("MAXWELL_EQUATION_FVM", MAXWELL_EQUATION_FVM)
+("MAXW_EQUATION_FVM", MAXW_EQUATION_FVM)
 ("ELASTICITY", FEM_ELASTICITY)
 ("DISC_ADJ_EULER", DISC_ADJ_EULER)
 ("DISC_ADJ_RANS", DISC_ADJ_RANS)
@@ -446,6 +446,7 @@ enum RUNTIME_TYPE {
   RUNTIME_FEA_SYS = 20,		/*!< \brief One-physics case, the code is solving the FEA equation. */
   RUNTIME_ADJFEA_SYS = 30,		/*!< \brief One-physics case, the code is solving the adjoint FEA equation. */
   RUNTIME_HEAT_SYS = 21,		/*!< \brief One-physics case, the code is solving the heat equation. */
+  RUNTIME_MAXW_SYS = 23,		/*!< \brief One-physics case, the code is solving the electromagnetic Maxwell equations. */
   RUNTIME_ADJHEAT_SYS = 31, /*!< \brief One-physics case, the code is solving the adjoint heat equation. */
   RUNTIME_TRANS_SYS = 22,			/*!< \brief One-physics case, the code is solving the turbulence model. */
 };
