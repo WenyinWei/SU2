@@ -193,6 +193,8 @@ enum ENUM_SOLVER {
   EULER = 1,							/*!< \brief Definition of the Euler's solver. */
   NAVIER_STOKES = 2,					/*!< \brief Definition of the Navier-Stokes' solver. */
   RANS = 3,								/*!< \brief Definition of the Reynolds-averaged Navier-Stokes' (RANS) solver. */
+  // EULER_MAXWELL = 4,							/*!< \brief Definition of the Euler's solver plus maxwell solver. */
+  // NAVIER_STOKES_MAXWELL = 5,					/*!< \brief Definition of the Navier-Stokes' solver plus maxwell solver. */
   HEAT_EQUATION_FVM = 28,     /*!< \brief Definition of the finite volume heat solver. */
   FLUID_STRUCTURE_INTERACTION = 12,		/*!< \brief Definition of a FSI solver. */
   FEM_ELASTICITY = 13,					/*!< \brief Definition of a FEM solver. */

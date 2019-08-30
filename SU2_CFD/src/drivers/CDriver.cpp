@@ -1001,7 +1001,7 @@ void CDriver::Solver_Preprocessing(CConfig* config, CGeometry** geometry, CSolve
   bool euler, ns, turbulent,
       fem_euler, fem_ns, fem_turbulent, fem_transition,
       adj_euler, adj_ns, adj_turb,
-      heat_fvm,
+      heat_fvm, maxwell_fvm,
       fem, disc_adj_fem,
       spalart_allmaras, neg_spalart_allmaras, menter_sst, transition,
       template_solver, disc_adj, disc_adj_turb, disc_adj_heat,
@@ -1022,6 +1022,7 @@ void CDriver::Solver_Preprocessing(CConfig* config, CGeometry** geometry, CSolve
   disc_adj         = false;
   fem              = false;  disc_adj_fem     = false;
   heat_fvm         = false;  disc_adj_heat    = false;
+  maxwell_fvm      = false;
   transition       = false;  fem_transition   = false;
   template_solver  = false;
   fem_dg_flow      = false;  fem_dg_shock_persson = false;
@@ -1042,6 +1043,7 @@ void CDriver::Solver_Preprocessing(CConfig* config, CGeometry** geometry, CSolve
     case FEM_RANS : fem_ns = true; fem_turbulent = true; if(config->GetKind_Trans_Model() == LM) fem_transition = true; break;
     case FEM_LES : fem_ns = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
+    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1157,6 +1159,10 @@ void CDriver::Solver_Preprocessing(CConfig* config, CGeometry** geometry, CSolve
       solver[iMGlevel][HEAT_SOL] = new CHeatSolverFVM(geometry[iMGlevel], config, iMGlevel);
       if (iMGlevel == MESH_0) DOFsPerPoint += solver[iMGlevel][HEAT_SOL]->GetnVar();
     }
+    if (maxwell_fvm) {
+      solver[iMGlevel][MAXW_SOL] = new CMaxwellSolver(geometry[iMGlevel], config, iMGlevel);
+      if (iMGlevel == MESH_0) DOFsPerPoint += solver[iMGlevel][MAXW_SOL]->GetnVar();
+    }
     if (fem) {
       solver[iMGlevel][FEA_SOL] = new CFEASolver(geometry[iMGlevel], config);
       if (iMGlevel == MESH_0) DOFsPerPoint += solver[iMGlevel][FEA_SOL]->GetnVar();
@@ -1231,7 +1237,7 @@ void CDriver::Inlet_Preprocessing(CSolver ***solver, CGeometry **geometry,
 
   bool euler, ns, turbulent,
   adj_euler, adj_ns, adj_turb,
-  heat,
+  heat, maxwell_fvm,
   fem,
   template_solver, disc_adj, disc_adj_fem, disc_adj_turb;
   int val_iter = 0;
@@ -1244,6 +1250,7 @@ void CDriver::Inlet_Preprocessing(CSolver ***solver, CGeometry **geometry,
   disc_adj         = false;
   fem              = false;  disc_adj_fem     = false;
   heat             = false;  disc_adj_turb    = false;
+  maxwell_fvm      = false;
   template_solver  = false;
 
   /*--- Adjust iteration number for unsteady restarts. ---*/
@@ -1273,6 +1280,7 @@ void CDriver::Inlet_Preprocessing(CSolver ***solver, CGeometry **geometry,
     case NAVIER_STOKES: ns = true; break;
     case RANS : ns = true; turbulent = true; break;
     case HEAT_EQUATION_FVM: heat = true; break;
+    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1313,6 +1321,9 @@ void CDriver::Inlet_Preprocessing(CSolver ***solver, CGeometry **geometry,
     if (heat) {
       no_profile = true;
     }
+    if (maxwell_fvm) {
+      no_profile = true;
+    }// TODO: Wenyin not sure what it really does, have a check
     if (fem) {
       no_profile = true;
     }
@@ -1357,6 +1368,7 @@ void CDriver::Solver_Restart(CSolver ***solver, CGeometry **geometry,
   bool euler, ns, turbulent,
   adj_euler, adj_ns, adj_turb,
   heat_fvm, fem, fem_euler, fem_ns, fem_dg_flow,
+  maxwell_fvm,
   template_solver, disc_adj, disc_adj_fem, disc_adj_turb, disc_adj_heat;
   int val_iter = 0;
 
@@ -1369,6 +1381,7 @@ void CDriver::Solver_Restart(CSolver ***solver, CGeometry **geometry,
   fem              = false;  disc_adj_fem     = false;
   disc_adj_turb    = false;
   heat_fvm         = false;  disc_adj_heat    = false;
+  maxwell_fvm      = false;
   template_solver  = false;
 
   /*--- Check for restarts and use the LoadRestart() routines. ---*/
@@ -1409,6 +1422,7 @@ void CDriver::Solver_Restart(CSolver ***solver, CGeometry **geometry,
     case FEM_RANS : fem_ns = true; break;
     case FEM_LES : fem_ns = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
+    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1451,6 +1465,9 @@ void CDriver::Solver_Restart(CSolver ***solver, CGeometry **geometry,
     if (heat_fvm) {
       solver[MESH_0][HEAT_SOL]->LoadRestart(geometry, solver, config, val_iter, update_geo);
     }
+    if (maxwell_fvm) {
+      solver[MESH_0][MAXW_SOL]->LoadRestart(geometry, solver, config, val_iter, update_geo);
+    }// TODO: Not sure why there are twice if branch and LoadRestart 
   }
 
   if (restart) {
@@ -1459,6 +1476,9 @@ void CDriver::Solver_Restart(CSolver ***solver, CGeometry **geometry,
     }
     if (heat_fvm) {
       solver[MESH_0][HEAT_SOL]->LoadRestart(geometry, solver, config, val_iter, update_geo);
+    }
+    if (maxwell_fvm) {
+      solver[MESH_0][MAXW_SOL]->LoadRestart(geometry, solver, config, val_iter, update_geo);
     }
     if (adj_euler || adj_ns) {
       solver[MESH_0][ADJFLOW_SOL]->LoadRestart(geometry, solver, config, val_iter, update_geo);
@@ -1500,6 +1520,7 @@ void CDriver::Solver_Postprocessing(CSolver ****solver, CGeometry **geometry,
   bool euler, ns, turbulent,
   adj_euler, adj_ns, adj_turb,
   heat_fvm, fem,
+  maxwell_fvm,
   spalart_allmaras, neg_spalart_allmaras, menter_sst, transition,
   template_solver, disc_adj, disc_adj_turb, disc_adj_fem, disc_adj_heat,
   e_spalart_allmaras, comp_spalart_allmaras, e_comp_spalart_allmaras;
@@ -1513,6 +1534,7 @@ void CDriver::Solver_Postprocessing(CSolver ****solver, CGeometry **geometry,
   disc_adj        = false;
   fem              = false;  disc_adj_fem    = false;
   heat_fvm        = false;   disc_adj_heat   = false;
+  maxwell_fvm      = false;
   transition       = false;
   template_solver  = false;
   e_spalart_allmaras = false; comp_spalart_allmaras = false; e_comp_spalart_allmaras = false;
@@ -1529,6 +1551,7 @@ void CDriver::Solver_Postprocessing(CSolver ****solver, CGeometry **geometry,
     case FEM_LES: ns = true; break;
     case FEM_RANS: ns = true; turbulent = true; if (config->GetKind_Trans_Model() == LM) transition = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
+    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1599,6 +1622,9 @@ void CDriver::Solver_Postprocessing(CSolver ****solver, CGeometry **geometry,
     if (heat_fvm) {
       delete solver[val_iInst][iMGlevel][HEAT_SOL];
     }
+    if (maxwell_fvm) {
+      delete solver[val_iInst][iMGlevel][MAXW_SOL];
+    }
     if (fem) {
       delete solver[val_iInst][iMGlevel][FEA_SOL];
     }
@@ -1626,7 +1652,7 @@ void CDriver::Integration_Preprocessing(CConfig *config, CIntegration **&integra
   
   bool euler, adj_euler, ns, adj_ns, turbulent, adj_turb, fem,
       fem_euler, fem_ns, fem_turbulent,
-      heat_fvm, template_solver, transition, disc_adj, disc_adj_fem, disc_adj_heat;
+      heat_fvm, maxwell_fvm, template_solver, transition, disc_adj, disc_adj_fem, disc_adj_heat;
 
   /*--- Initialize some useful booleans ---*/
   euler            = false; adj_euler        = false;
@@ -1637,6 +1663,7 @@ void CDriver::Integration_Preprocessing(CConfig *config, CIntegration **&integra
   fem_ns           = false;
   fem_turbulent    = false;
   heat_fvm         = false; disc_adj_heat    = false;
+  maxwell_fvm      = false;
   fem 			       = false; disc_adj_fem     = false;
   transition       = false;
   template_solver  = false;
@@ -1652,6 +1679,7 @@ void CDriver::Integration_Preprocessing(CConfig *config, CIntegration **&integra
     case FEM_RANS : fem_ns = true; fem_turbulent = true; break;
     case FEM_LES :  fem_ns = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
+    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1675,6 +1703,7 @@ void CDriver::Integration_Preprocessing(CConfig *config, CIntegration **&integra
   if (turbulent) integration[TURB_SOL] = new CSingleGridIntegration(config);
   if (transition) integration[TRANS_SOL] = new CSingleGridIntegration(config);
   if (heat_fvm) integration[HEAT_SOL] = new CSingleGridIntegration(config);
+  if (maxwell_fvm) integration[MAXW_SOL] = new CSingleGridIntegration(config);
   if (fem) integration[FEA_SOL] = new CStructuralIntegration(config);
 
   /*--- Allocate integration container for finite element flow solver. ---*/
@@ -1700,7 +1729,7 @@ void CDriver::Integration_Preprocessing(CConfig *config, CIntegration **&integra
 void CDriver::Integration_Postprocessing(CIntegration ***integration, CGeometry **geometry, CConfig *config, unsigned short val_iInst) {
   bool euler, adj_euler, ns, adj_ns, turbulent, adj_turb, fem,
       fem_euler, fem_ns, fem_turbulent,
-      heat_fvm, template_solver, transition, disc_adj, disc_adj_fem, disc_adj_heat;
+      heat_fvm, maxwell_fvm, template_solver, transition, disc_adj, disc_adj_fem, disc_adj_heat;
 
   /*--- Initialize some useful booleans ---*/
   euler            = false; adj_euler        = false;
@@ -1711,6 +1740,7 @@ void CDriver::Integration_Postprocessing(CIntegration ***integration, CGeometry 
   fem_ns           = false;
   fem_turbulent    = false;
   heat_fvm         = false; disc_adj_heat    = false;
+  maxwell_fvm      = false;
   fem              = false; disc_adj_fem     = false;
   transition       = false;
   template_solver  = false;
@@ -1726,6 +1756,7 @@ void CDriver::Integration_Postprocessing(CIntegration ***integration, CGeometry 
     case FEM_RANS : fem_ns = true; fem_turbulent = true; break;
     case FEM_LES :  fem_ns = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
+    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1748,6 +1779,7 @@ void CDriver::Integration_Postprocessing(CIntegration ***integration, CGeometry 
   if (turbulent) delete integration[val_iInst][TURB_SOL];
   if (transition) delete integration[val_iInst][TRANS_SOL];
   if (heat_fvm) delete integration[val_iInst][HEAT_SOL];
+  if (maxwell_fvm) delete integration[val_iInst][MAXW_SOL];
   if (fem) delete integration[val_iInst][FEA_SOL];
   if (disc_adj_fem) delete integration[val_iInst][ADJFEA_SOL];
   if (disc_adj_heat) delete integration[val_iInst][ADJHEAT_SOL];
@@ -1780,7 +1812,8 @@ void CDriver::Numerics_Preprocessing(CConfig *config, CSolver ***solver, CNumeri
   nVar_Adj_Flow         = 0,
   nVar_Adj_Turb         = 0,
   nVar_FEM              = 0,
-  nVar_Heat             = 0;
+  nVar_Heat             = 0,
+  nVar_Maxwell          = 0;
   
   numerics = new CNumerics***[config->GetnMGLevels()+1];
   
@@ -1793,7 +1826,7 @@ void CDriver::Numerics_Preprocessing(CConfig *config, CSolver ***solver, CNumeri
   fem_euler, fem_ns, fem_turbulent,
   spalart_allmaras, neg_spalart_allmaras, menter_sst,
   fem,
-  heat_fvm,
+  heat_fvm, maxwell_fvm,
   transition,
   template_solver;
   bool e_spalart_allmaras, comp_spalart_allmaras, e_comp_spalart_allmaras;
@@ -1807,7 +1840,7 @@ void CDriver::Numerics_Preprocessing(CConfig *config, CSolver ***solver, CNumeri
   euler            = false; ns     = false; turbulent     = false;
   fem_euler        = false; fem_ns = false; fem_turbulent = false;
   adj_euler        = false;   adj_ns           = false;   adj_turb         = false;
-  heat_fvm         = false;
+  heat_fvm         = false; maxwell_fvm = false;
   fem              = false;
   spalart_allmaras = false; neg_spalart_allmaras = false;	menter_sst       = false;
   transition       = false;
@@ -1825,6 +1858,7 @@ void CDriver::Numerics_Preprocessing(CConfig *config, CSolver ***solver, CNumeri
     case FEM_RANS : case DISC_ADJ_FEM_RANS : fem_ns = true; fem_turbulent = true; break;
     case FEM_LES :  fem_ns = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
+    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: case DISC_ADJ_FEM: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -1861,6 +1895,7 @@ void CDriver::Numerics_Preprocessing(CConfig *config, CSolver ***solver, CNumeri
   
   if (fem)          nVar_FEM = solver[MESH_0][FEA_SOL]->GetnVar();
   if (heat_fvm)     nVar_Heat = solver[MESH_0][HEAT_SOL]->GetnVar();
+  if (maxwell_fvm)  nVar_Maxwell = solver[MESH_0][MAXW_SOL]->GetnVar();
 
   /*--- Number of variables for adjoint problem ---*/
   
@@ -2322,6 +2357,36 @@ void CDriver::Numerics_Preprocessing(CConfig *config, CSolver ***solver, CNumeri
       }
     }
   }
+
+  /*--- Solver definition of the finite volume heat solver  ---*/
+  if (maxwell_fvm) {
+
+    /*--- Definition of the viscous scheme for each equation and mesh level ---*/
+    for (iMGlevel = 0; iMGlevel <= config->GetnMGLevels(); iMGlevel++) {
+
+      numerics[iMGlevel][MAXW_SOL][SOURCE_FIRST_TERM] = new CSourceFluxSplit_Maxwell(nDim, nVar_Maxwell, config);
+
+      // numerics[iMGlevel][MAXW_SOL][VISC_TERM] = new CAvgGradCorrected_Heat(nDim, nVar_Heat, config);
+      // numerics[iMGlevel][MAXW_SOL][VISC_BOUND_TERM] = new CAvgGrad_Heat(nDim, nVar_Heat, config);
+
+      // switch (config->GetKind_ConvNumScheme_Heat()) {
+
+      //   case SPACE_UPWIND :
+      //     numerics[iMGlevel][HEAT_SOL][CONV_TERM] = new CUpwSca_Heat(nDim, nVar_Heat, config);
+      //     numerics[iMGlevel][HEAT_SOL][CONV_BOUND_TERM] = new CUpwSca_Heat(nDim, nVar_Heat, config);
+      //     break;
+
+      //   case SPACE_CENTERED :
+      //     numerics[iMGlevel][HEAT_SOL][CONV_TERM] = new CCentSca_Heat(nDim, nVar_Heat, config);
+      //     numerics[iMGlevel][HEAT_SOL][CONV_BOUND_TERM] = new CUpwSca_Heat(nDim, nVar_Heat, config);
+      //   break;
+
+      //   default :
+      //     cout << "Convective scheme not implemented (heat)." << endl; exit(EXIT_FAILURE);
+      //   break;
+      // }
+    }
+  }
   
   /*--- Solver definition for the flow adjoint problem ---*/
   
@@ -2606,7 +2671,7 @@ void CDriver::Numerics_Postprocessing(CNumerics *****numerics,
   turbulent, adj_turb,
   spalart_allmaras, neg_spalart_allmaras, menter_sst,
   fem,
-  heat_fvm,
+  heat_fvm, maxwell_fvm,
   transition,
   template_solver;
 
@@ -2621,7 +2686,7 @@ void CDriver::Numerics_Postprocessing(CNumerics *****numerics,
   adj_euler        = false;   adj_ns           = false;   adj_turb         = false;
   fem        = false;
   spalart_allmaras = false;   neg_spalart_allmaras = false; menter_sst       = false;
-  transition       = false;   heat_fvm         = false;
+  transition       = false;   heat_fvm         = false; maxwell_fvm = false;
   template_solver  = false;
     
   e_spalart_allmaras = false; comp_spalart_allmaras = false; e_comp_spalart_allmaras = false;
@@ -2637,6 +2702,7 @@ void CDriver::Numerics_Postprocessing(CNumerics *****numerics,
     case FEM_RANS : case DISC_ADJ_FEM_RANS : fem_ns = true; fem_turbulent = true; break;
     case FEM_LES :  fem_ns = true; break;
     case HEAT_EQUATION_FVM: heat_fvm = true; break;
+    case MAXWELL_EQUATION_FVM: maxwell_fvm = true; break;
     case FEM_ELASTICITY: case DISC_ADJ_FEM: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
@@ -2853,7 +2919,32 @@ void CDriver::Numerics_Postprocessing(CNumerics *****numerics,
 
           delete numerics[val_iInst][iMGlevel][HEAT_SOL][CONV_TERM];
           delete numerics[val_iInst][iMGlevel][HEAT_SOL][CONV_BOUND_TERM];
-        break;
+          break;
+      }
+    }
+
+    if (maxwell_fvm) {
+
+    /*--- Definition of the viscous scheme for each equation and mesh level ---*/
+    for (iMGlevel = 0; iMGlevel <= config->GetnMGLevels(); iMGlevel++) {
+
+      delete numerics[val_iInst][iMGlevel][MAXW_SOL][SOURCE_FIRST_TERM];
+
+      // delete numerics[val_iInst][iMGlevel][MAXW_SOL][VISC_TERM];
+      // delete numerics[val_iInst][iMGlevel][MAXW_SOL][VISC_BOUND_TERM];
+
+      // switch (config->GetKind_ConvNumScheme_Maxwell()) {
+      //   case SPACE_UPWIND :
+
+      //     delete numerics[val_iInst][iMGlevel][MAXW_SOL][CONV_TERM];
+      //     delete numerics[val_iInst][iMGlevel][MAXW_SOL][CONV_BOUND_TERM];
+      //     break;
+
+      //   case SPACE_CENTERED :
+
+      //     delete numerics[val_iInst][iMGlevel][MAXW_SOL][CONV_TERM];
+      //     delete numerics[val_iInst][iMGlevel][MAXW_SOL][CONV_BOUND_TERM];
+      //   break;
       }
     }
   }
@@ -3007,7 +3098,7 @@ void CDriver::Iteration_Preprocessing(CConfig* config, CIteration *&iteration) {
   switch (config->GetKind_Solver()) {
     
     case EULER: case NAVIER_STOKES: case RANS:
-      
+    // TODO: the cases of EULER_MAXWELL, NAVIER_STOKES_MAXWELL, RANS_MAXWELL still absent
       if(config->GetBoolTurbomachinery()){
         if (rank == MASTER_NODE)
           cout << "Euler/Navier-Stokes/RANS turbomachinery fluid iteration." << endl;
@@ -3031,6 +3122,13 @@ void CDriver::Iteration_Preprocessing(CConfig* config, CIteration *&iteration) {
       if (rank == MASTER_NODE)
         cout << "Heat iteration (finite volume method)." << endl;
       iteration = new CHeatIteration(config);
+      break;
+            
+    case MAXWELL_EQUATION_FVM:
+      if (rank == MASTER_NODE)
+        cout << "Maxwell iteration (finite volume method)." << endl;
+      // TODO: Supplement the Iteration class
+      iteration = new CMaxwellIteration(config);
       break;
       
     case FEM_ELASTICITY:
@@ -3127,7 +3225,7 @@ void CDriver::DynamicMesh_Preprocessing(CConfig *config, CGeometry **geometry, C
   }
   
 }
-
+// TODO: I guess this function is only required for different zones to communicate with each other
 void CDriver::Interface_Preprocessing(CConfig **config, CSolver***** solver, CGeometry**** geometry,
                                       unsigned short** transfer_types, CTransfer ***&transfer, CInterpolator ***&interpolation) {
 
@@ -3843,6 +3941,9 @@ bool CDriver::Monitor(unsigned long ExtIter) {
       StopCalc = integration_container[ZONE_0][INST_0][FLOW_SOL]->GetConvergence(); break;
     case HEAT_EQUATION_FVM:
       StopCalc = integration_container[ZONE_0][INST_0][HEAT_SOL]->GetConvergence(); break;
+      // TODO: Make the Convergence criteria for Maxwell solver
+    case MAXWELL_EQUATION_FVM:
+      StopCalc = integration_container[ZONE_0][INST_0][MAXW_SOL]->GetConvergence(); break;
     case FEM_ELASTICITY:
       StopCalc = integration_container[ZONE_0][INST_0][FEA_SOL]->GetConvergence(); break;
     case ADJ_EULER: case ADJ_NAVIER_STOKES: case ADJ_RANS:
@@ -7015,6 +7116,9 @@ void CMultiphysicsZonalDriver::Run() {
         checkConvergence += (int) integration_container[iZone][INST_0][ADJFLOW_SOL]->GetConvergence();
       else if ((config_container[iZone]->GetKind_Solver() == HEAT_EQUATION_FVM))
         checkConvergence += (int) integration_container[iZone][INST_0][HEAT_SOL]->GetConvergence();
+      else if ((config_container[iZone]->GetKind_Solver() == MAXWELL_EQUATION_FVM))
+        checkConvergence += (int) integration_container[iZone][INST_0][MAXW_SOL]->GetConvergence();
+      // TODO: Remember to add Maxwell solver convergence check function
     }
 
     /*--- If convergence was reached in every zone --*/
@@ -7048,7 +7152,7 @@ void CMultiphysicsZonalDriver::DynamicMeshUpdate(unsigned long ExtIter) {
   }
 
 }
-
+// TODO: I guess this function is only required for the interzone communication
 void CMultiphysicsZonalDriver::Transfer_Data(unsigned short donorZone, unsigned short targetZone) {
 
   if (transfer_types[donorZone][targetZone] == SLIDING_INTERFACE) {

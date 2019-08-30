@@ -281,6 +281,7 @@ void CMaxwellSolver::Preprocessing(CGeometry *geometry, CSolver **solver_contain
 void CMaxwellSolver::Postprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iMesh) { }
 
 // TODO: The skipvars variable needs to be checked for Maxwell case
+// It only works when loading restart data, so not necessary now.
 void CMaxwellSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig *config, int val_iter, bool val_update_geo) {
 
   /*--- Restart the solution from file information ---*/
@@ -520,7 +521,7 @@ void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
                || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
                || (config->GetKind_Solver() == DISC_ADJ_RANS));
 
-  // bool turb = ((config->GetKind_Solver() == RANS) || (config->GetKind_Solver() == DISC_ADJ_RANS));
+  bool turb = ((config->GetKind_Solver() == RANS) || (config->GetKind_Solver() == DISC_ADJ_RANS));
 
   // eddy_viscosity_i = 0.0;
   // eddy_viscosity_j = 0.0;
