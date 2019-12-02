@@ -807,47 +807,57 @@ void CSingleGridIntegration::SingleGrid_Iteration(CGeometry ****geometry, CSolve
 
   /*--- Preprocessing ---*/
   
+  cout << "Now before SingleGrid_Iteration Preprocessing"<<endl;
   solver_container[iZone][iInst][FinestMesh][SolContainer_Position]->Preprocessing(geometry[iZone][iInst][FinestMesh], solver_container[iZone][iInst][FinestMesh], config[iZone], FinestMesh, 0, RunTime_EqSystem, false);
   
   /*--- Set the old solution ---*/
   
+  cout << "Now before SingleGrid_Iteration Set_OldSolution"<<endl;
   solver_container[iZone][iInst][FinestMesh][SolContainer_Position]->Set_OldSolution(geometry[iZone][iInst][FinestMesh]);
   
   /*--- Time step evaluation ---*/
   
+  cout << "Now before SingleGrid_Iteration SetTime_Step"<<endl;
   solver_container[iZone][iInst][FinestMesh][SolContainer_Position]->SetTime_Step(geometry[iZone][iInst][FinestMesh], solver_container[iZone][iInst][FinestMesh], config[iZone], FinestMesh, 0);
   
   /*--- Space integration ---*/
   
+  cout << "Now before SingleGrid_Iteration Space_Integration"<<endl;
   Space_Integration(geometry[iZone][iInst][FinestMesh], solver_container[iZone][iInst][FinestMesh], numerics_container[iZone][iInst][FinestMesh][SolContainer_Position],
                     config[iZone], FinestMesh, NO_RK_ITER, RunTime_EqSystem);
   
   /*--- Time integration ---*/
   
+  cout << "Now before SingleGrid_Iteration Time_Integration"<<endl;
   Time_Integration(geometry[iZone][iInst][FinestMesh], solver_container[iZone][iInst][FinestMesh], config[iZone], NO_RK_ITER,
                    RunTime_EqSystem, Iteration);
   
   /*--- Postprocessing ---*/
   
+  cout << "Now before SingleGrid_Iteration Postprocessing"<<endl;
   solver_container[iZone][iInst][FinestMesh][SolContainer_Position]->Postprocessing(geometry[iZone][iInst][FinestMesh], solver_container[iZone][iInst][FinestMesh], config[iZone], FinestMesh);
   
   /*--- Compute adimensional parameters and the convergence monitor ---*/
   
+  cout << "Now before SingleGrid_Iteration log10"<<endl;
   switch (RunTime_EqSystem) {
     case RUNTIME_FEA_SYS:     monitor = log10(solver_container[iZone][iInst][FinestMesh][FEA_SOL]->GetRes_RMS(0));     break;
     case RUNTIME_HEAT_SYS:    monitor = log10(solver_container[iZone][iInst][FinestMesh][HEAT_SOL]->GetRes_RMS(0));    break;
   }
   
+  cout << "Now before SingleGrid_Iteration Heat_Fluxes"<<endl;
   if (RunTime_EqSystem == RUNTIME_HEAT_SYS) {
     solver_container[iZone][iInst][FinestMesh][HEAT_SOL]->Heat_Fluxes(geometry[iZone][iInst][FinestMesh], solver_container[iZone][iInst][FinestMesh], config[iZone]);
   }
   
   /*--- Convergence strategy ---*/
   
+  cout << "Now before SingleGrid_Iteration Convergence_Monitoring"<<endl;
   Convergence_Monitoring(geometry[iZone][iInst][FinestMesh], config[iZone], Iteration, monitor, FinestMesh);
   
   /*--- If turbulence model, copy the turbulence variables to the coarse levels ---*/
   
+  cout << "Now before SingleGrid_Iteration RUNTIME_TURB_SYS"<<endl;
   if (RunTime_EqSystem == RUNTIME_TURB_SYS) {
     for (iMesh = FinestMesh; iMesh < config[iZone]->GetnMGLevels(); iMesh++) {
       SetRestricted_Solution(RunTime_EqSystem, solver_container[iZone][iInst][iMesh][SolContainer_Position], solver_container[iZone][iInst][iMesh+1][SolContainer_Position], geometry[iZone][iInst][iMesh], geometry[iZone][iInst][iMesh+1], config[iZone]);

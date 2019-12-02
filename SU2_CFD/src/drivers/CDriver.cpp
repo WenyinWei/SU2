@@ -1156,12 +1156,14 @@ void CDriver::Solver_Preprocessing(CConfig* config, CGeometry** geometry, CSolve
         SU2_MPI::Error("Finite element transition model not yet implemented.", CURRENT_FUNCTION);
     }
     if (heat_fvm) {
+      cout << "DEBUG: Before new heat solver" << endl;
       solver[iMGlevel][HEAT_SOL] = new CHeatSolverFVM(geometry[iMGlevel], config, iMGlevel);
+      cout << "DEBUG: Before add the variable number" << endl;
       if (iMGlevel == MESH_0) DOFsPerPoint += solver[iMGlevel][HEAT_SOL]->GetnVar();
     }
     if (maxwell_fvm) {
-      solver[iMGlevel][MAXW_SOL] = new CMaxwellSolver(geometry[iMGlevel], config, iMGlevel);
-      if (iMGlevel == MESH_0) DOFsPerPoint += solver[iMGlevel][MAXW_SOL]->GetnVar();
+      // solver[iMGlevel][MAXW_SOL] = new CMaxwellSolver(geometry[iMGlevel], config, iMGlevel);
+      // if (iMGlevel == MESH_0) DOFsPerPoint += solver[iMGlevel][MAXW_SOL]->GetnVar();
     }
     if (fem) {
       solver[iMGlevel][FEA_SOL] = new CFEASolver(geometry[iMGlevel], config);
@@ -1623,7 +1625,7 @@ void CDriver::Solver_Postprocessing(CSolver ****solver, CGeometry **geometry,
       delete solver[val_iInst][iMGlevel][HEAT_SOL];
     }
     if (maxwell_fvm) {
-      delete solver[val_iInst][iMGlevel][MAXW_SOL];
+      // delete solver[val_iInst][iMGlevel][MAXW_SOL];
     }
     if (fem) {
       delete solver[val_iInst][iMGlevel][FEA_SOL];
@@ -2364,7 +2366,7 @@ void CDriver::Numerics_Preprocessing(CConfig *config, CSolver ***solver, CNumeri
     /*--- Definition of the viscous scheme for each equation and mesh level ---*/
     for (iMGlevel = 0; iMGlevel <= config->GetnMGLevels(); iMGlevel++) {
 
-      numerics[iMGlevel][MAXW_SOL][SOURCE_FIRST_TERM] = new CSourceFluxSplit_Maxwell(nDim, nVar_Maxwell, config);
+      // numerics[iMGlevel][MAXW_SOL][SOURCE_FIRST_TERM] = new CSourceFluxSplit_Maxwell(nDim, nVar_Maxwell, config);
 
       // numerics[iMGlevel][MAXW_SOL][VISC_TERM] = new CAvgGradCorrected_Heat(nDim, nVar_Heat, config);
       // numerics[iMGlevel][MAXW_SOL][VISC_BOUND_TERM] = new CAvgGrad_Heat(nDim, nVar_Heat, config);
@@ -3128,7 +3130,7 @@ void CDriver::Iteration_Preprocessing(CConfig* config, CIteration *&iteration) {
       if (rank == MASTER_NODE)
         cout << "Maxwell iteration (finite volume method)." << endl;
       // TODO: Supplement the Iteration class
-      iteration = new CMaxwellIteration(config);
+      // iteration = new CMaxwellIteration(config);
       break;
       
     case FEM_ELASTICITY:
@@ -4086,16 +4088,21 @@ void CFluidDriver::Run() {
 
   unsigned short iZone, jZone, checkConvergence;
   unsigned long IntIter, nIntIter;
-  bool unsteady;
+  bool unsteady, flow;
 
   /*--- Run a single iteration of a multi-zone problem by looping over all
    zones and executing the iterations. Note that data transers between zones
    and other intermediate procedures may be required. ---*/
 
   unsteady = (config_container[MESH_0]->GetUnsteady_Simulation() == DT_STEPPING_1ST) || (config_container[MESH_0]->GetUnsteady_Simulation() == DT_STEPPING_2ND);
-
+  
+  flow = ((config_container[MESH_0]->GetKind_Solver() == NAVIER_STOKES)
+        || (config_container[MESH_0]->GetKind_Solver() == RANS)
+        || (config_container[MESH_0]->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
+        || (config_container[MESH_0]->GetKind_Solver() == DISC_ADJ_RANS));
   /*--- Zone preprocessing ---*/
 
+  cout << "Before Iteration Preprocess" << endl;
   for (iZone = 0; iZone < nZone; iZone++)
     iteration_container[iZone][INST_0]->Preprocess(output, integration_container, geometry_container, solver_container, numerics_container, config_container, surface_movement, grid_movement, FFDBox, iZone, INST_0);
 
@@ -4104,6 +4111,7 @@ void CFluidDriver::Run() {
    this is done once in the interpolator_container constructor 
    at the beginning of the computation ---*/
 
+  cout << "Before Interpolator Set_TransferCoeff" << endl;
   if ( unsteady ) {
     for (iZone = 0; iZone < nZone; iZone++) {   
       for (jZone = 0; jZone < nZone; jZone++)
@@ -4129,6 +4137,7 @@ void CFluidDriver::Run() {
 
     /*--- For each zone runs one single iteration ---*/
 
+    cout << "Before Iteration Iterate" << endl;
     for (iZone = 0; iZone < nZone; iZone++) {
       config_container[iZone]->SetIntIter(IntIter);
       iteration_container[iZone][INST_0]->Iterate(output, integration_container, geometry_container, solver_container, numerics_container, config_container, surface_movement, grid_movement, FFDBox, iZone, INST_0);
@@ -4136,9 +4145,13 @@ void CFluidDriver::Run() {
 
     /*--- Check convergence in each zone --*/
 
+    cout << "After Iteration Iterate" << endl;
     checkConvergence = 0;
-    for (iZone = 0; iZone < nZone; iZone++)
-    checkConvergence += (int) integration_container[iZone][INST_0][FLOW_SOL]->GetConvergence();
+    if (flow)
+    {
+      for (iZone = 0; iZone < nZone; iZone++)  checkConvergence += (int) integration_container[iZone][INST_0][FLOW_SOL]->GetConvergence();
+    }
+        
 
     /*--- If convergence was reached in every zone --*/
 

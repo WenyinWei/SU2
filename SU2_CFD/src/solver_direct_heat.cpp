@@ -1486,6 +1486,7 @@ void CHeatSolverFVM::SetTime_Step(CGeometry *geometry, CSolver **solver_containe
       node[iPoint]->SetDelta_Time(CFL_Reduction*Local_Delta_Time);
     }
     else {
+      cout << "DEBUG: Some points now have the 0.0 delta time value" << endl;
       node[iPoint]->SetDelta_Time(0.0);
     }
   }
@@ -1515,8 +1516,23 @@ void CHeatSolverFVM::SetTime_Step(CGeometry *geometry, CSolver **solver_containe
     SU2_MPI::Bcast(&rbuf_time, 1, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
     Global_Delta_Time = rbuf_time;
 #endif
-    for (iPoint = 0; iPoint < nPointDomain; iPoint++)
-      node[iPoint]->SetDelta_Time(Global_Delta_Time);
+    for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
+            
+            /*--- Sets the regular CFL equal to the unsteady CFL ---*/
+            // config->SetCFL(iMesh,config->GetUnst_CFL());
+            
+            /*--- If the unsteady CFL is set to zero, it uses the defined unsteady time step, otherwise
+             it computes the time step based on the unsteady CFL ---*/
+            // if (config->GetCFL(iMesh) == 0.0) {
+                cout << "Delta Unstable Time: " << config->GetDelta_UnstTime() << endl;
+                node[iPoint]->SetDelta_Time(config->GetDelta_UnstTime());
+            // } else {
+                // node[iPoint]->SetDelta_Time(Global_Delta_Time);
+            // }
+    }
+    // cout << "DEBUG： Global_Delta_Time is " << Global_Delta_Time << endl;
+    // for (iPoint = 0; iPoint < nPointDomain; iPoint++)
+    //   node[iPoint]->SetDelta_Time(Global_Delta_Time);
   }
 
   /*--- Recompute the unsteady time step for the dual time strategy
@@ -1562,6 +1578,7 @@ void CHeatSolverFVM::ExplicitEuler_Iteration(CGeometry *geometry, CSolver **solv
 
   for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
     Vol = geometry->node[iPoint]->GetVolume();
+    cout << "DEBUG: Point: " << iPoint << ", Delta time:" << node[iPoint]->GetDelta_Time() << endl;
     Delta = node[iPoint]->GetDelta_Time() / Vol;
 
     local_Res_TruncError = node[iPoint]->GetResTruncError();

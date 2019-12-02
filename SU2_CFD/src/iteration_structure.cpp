@@ -1281,7 +1281,7 @@ void CHeatIteration::Iterate(COutput *output,
   bool unsteady = (config[val_iZone]->GetUnsteady_Simulation() == DT_STEPPING_1ST) || (config[val_iZone]->GetUnsteady_Simulation() == DT_STEPPING_2ND);
   
   ExtIter = config[val_iZone]->GetExtIter();
-  
+  cout << "Now in CHeatIteration::Iterate"<<endl;
   /* --- Setting up iteration values depending on if this is a
    steady or an unsteady simulaiton */
 
@@ -1291,12 +1291,14 @@ void CHeatIteration::Iterate(COutput *output,
   /*--- Update global parameters ---*/
 
   config[val_iZone]->SetGlobalParam(HEAT_EQUATION_FVM, RUNTIME_HEAT_SYS, ExtIter);
+  cout << "Before SingleGrid_Iteration" << endl;
 
   integration[val_iZone][val_iInst][HEAT_SOL]->SingleGrid_Iteration(geometry, solver, numerics,
                                                                    config, RUNTIME_HEAT_SYS, IntIter, val_iZone, val_iInst);
   
   /*--- Write the convergence history ---*/
 
+  cout << "After SingleGrid_Iteration" << endl;
   if ( unsteady && !config[val_iZone]->GetDiscrete_Adjoint() ) {
 
     output->SetConvHistory_Body(NULL, geometry, solver, config, integration, true, 0.0, val_iZone, val_iInst);

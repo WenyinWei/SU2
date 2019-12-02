@@ -171,7 +171,7 @@ CMaxwellSolver::CMaxwellSolver(CGeometry *geometry, CConfig *config, unsigned sh
   // }
 
   // Set_Heatflux_Areas(geometry, config);
-  
+
 
   // su2double Temperature_Solid_Freestream_ND = config->GetTemperature_Freestream_Solid()/config->GetTemperature_Ref();
   if (maxwell_equation && (rank == MASTER_NODE)) {
@@ -498,13 +498,6 @@ void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
 
   unsigned long iEdge, iPoint, jPoint;
 
-  bool flow = ((config->GetKind_Solver() == NAVIER_STOKES)
-               || (config->GetKind_Solver() == RANS)
-               || (config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
-               || (config->GetKind_Solver() == DISC_ADJ_RANS));
-
-  bool turb = ((config->GetKind_Solver() == RANS) || (config->GetKind_Solver() == DISC_ADJ_RANS));
-
   // eddy_viscosity_i = 0.0;
   // eddy_viscosity_j = 0.0;
   // laminar_viscosity = config->GetMu_ConstantND();
@@ -581,71 +574,72 @@ void CMaxwellSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
   }
 }
 
-void CMaxwellSolver::Set_Heatflux_Areas(CGeometry *geometry, CConfig *config) {
+// TODO: One day you can use this function to calculate the RF power as long as you know the area of the RF source 
+// void CMaxwellSolver::Set_Heatflux_Areas(CGeometry *geometry, CConfig *config) {
 
-  unsigned short iMarker, iMarker_HeatFlux, Monitoring, iDim;
-  unsigned long iPoint, iVertex;
-  string HeatFlux_Tag, Marker_Tag;
+//   unsigned short iMarker, iMarker_HeatFlux, Monitoring, iDim;
+//   unsigned long iPoint, iVertex;
+//   string HeatFlux_Tag, Marker_Tag;
 
-  su2double *Local_Surface_Areas, Local_HeatFlux_Areas_Monitor, Area, *Normal;
-  Local_Surface_Areas = new su2double[config->GetnMarker_HeatFlux()];
+//   su2double *Local_Surface_Areas, Local_HeatFlux_Areas_Monitor, Area, *Normal;
+//   Local_Surface_Areas = new su2double[config->GetnMarker_HeatFlux()];
 
-  for ( iMarker_HeatFlux = 0; iMarker_HeatFlux < config->GetnMarker_HeatFlux(); iMarker_HeatFlux++ ) {
-    Local_Surface_Areas[iMarker_HeatFlux] = 0.0;
-  }
-  Local_HeatFlux_Areas_Monitor = 0.0;
+//   for ( iMarker_HeatFlux = 0; iMarker_HeatFlux < config->GetnMarker_HeatFlux(); iMarker_HeatFlux++ ) {
+//     Local_Surface_Areas[iMarker_HeatFlux] = 0.0;
+//   }
+//   Local_HeatFlux_Areas_Monitor = 0.0;
 
-  for (iMarker = 0; iMarker < nMarker; iMarker++) {
+//   for (iMarker = 0; iMarker < nMarker; iMarker++) {
 
-    Monitoring = config->GetMarker_All_Monitoring(iMarker);
+//     Monitoring = config->GetMarker_All_Monitoring(iMarker);
 
-    for ( iMarker_HeatFlux = 0; iMarker_HeatFlux < config->GetnMarker_HeatFlux(); iMarker_HeatFlux++ ) {
+//     for ( iMarker_HeatFlux = 0; iMarker_HeatFlux < config->GetnMarker_HeatFlux(); iMarker_HeatFlux++ ) {
 
-      HeatFlux_Tag = config->GetMarker_HeatFlux_TagBound(iMarker_HeatFlux);
-      Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+//       HeatFlux_Tag = config->GetMarker_HeatFlux_TagBound(iMarker_HeatFlux);
+//       Marker_Tag = config->GetMarker_All_TagBound(iMarker);
 
-      if (Marker_Tag == HeatFlux_Tag) {
+//       if (Marker_Tag == HeatFlux_Tag) {
 
-        Local_Surface_Areas[iMarker_HeatFlux] = 0.0;
+//         Local_Surface_Areas[iMarker_HeatFlux] = 0.0;
 
-        for( iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++ ) {
+//         for( iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++ ) {
 
-          iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+//           iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
 
-          if(geometry->node[iPoint]->GetDomain()) {
+//           if(geometry->node[iPoint]->GetDomain()) {
 
-            Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
-            Area = 0.0;
-            for (iDim = 0; iDim < nDim; iDim++) Area += Normal[iDim]*Normal[iDim];
-            Area = sqrt(Area);
+//             Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
+//             Area = 0.0;
+//             for (iDim = 0; iDim < nDim; iDim++) Area += Normal[iDim]*Normal[iDim];
+//             Area = sqrt(Area);
 
-            Local_Surface_Areas[iMarker_HeatFlux] += Area;
+//             Local_Surface_Areas[iMarker_HeatFlux] += Area;
 
-            if(Monitoring == YES) {
-              Local_HeatFlux_Areas_Monitor += Area;
-            }
-          }
-        }
-      }
-    }
-  }
-#ifdef HAVE_MPI
-    SU2_MPI::Allreduce(Local_Surface_Areas, Surface_Areas, config->GetnMarker_HeatFlux(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    SU2_MPI::Allreduce(&Local_HeatFlux_Areas_Monitor, &Total_HeatFlux_Areas_Monitor, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-#else
-    for( iMarker_HeatFlux = 0; iMarker_HeatFlux < config->GetnMarker_HeatFlux(); iMarker_HeatFlux++ ) {
-      Surface_Areas[iMarker_HeatFlux] = Local_Surface_Areas[iMarker_HeatFlux];
-    }
-    Total_HeatFlux_Areas_Monitor = Local_HeatFlux_Areas_Monitor;
-#endif
+//             if(Monitoring == YES) {
+//               Local_HeatFlux_Areas_Monitor += Area;
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+// #ifdef HAVE_MPI
+//     SU2_MPI::Allreduce(Local_Surface_Areas, Surface_Areas, config->GetnMarker_HeatFlux(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+//     SU2_MPI::Allreduce(&Local_HeatFlux_Areas_Monitor, &Total_HeatFlux_Areas_Monitor, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+// #else
+//     for( iMarker_HeatFlux = 0; iMarker_HeatFlux < config->GetnMarker_HeatFlux(); iMarker_HeatFlux++ ) {
+//       Surface_Areas[iMarker_HeatFlux] = Local_Surface_Areas[iMarker_HeatFlux];
+//     }
+//     Total_HeatFlux_Areas_Monitor = Local_HeatFlux_Areas_Monitor;
+// #endif
 
-  Total_HeatFlux_Areas = 0.0;
-  for( iMarker_HeatFlux = 0; iMarker_HeatFlux < config->GetnMarker_HeatFlux(); iMarker_HeatFlux++ ) {
-    Total_HeatFlux_Areas += Surface_Areas[iMarker_HeatFlux];
-  }
+//   Total_HeatFlux_Areas = 0.0;
+//   for( iMarker_HeatFlux = 0; iMarker_HeatFlux < config->GetnMarker_HeatFlux(); iMarker_HeatFlux++ ) {
+//     Total_HeatFlux_Areas += Surface_Areas[iMarker_HeatFlux];
+//   }
 
-  delete[] Local_Surface_Areas;
-}
+//   delete[] Local_Surface_Areas;
+// }
 
 void CMaxwellSolver::BC_Isothermal_Wall(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config,
                                        unsigned short val_marker) {
